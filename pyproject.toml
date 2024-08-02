@@ -22,6 +22,10 @@ python-dotenv = "^1.0.1"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
 
+
+[tool.poetry.scripts]
+app = 'src.cli:app'
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

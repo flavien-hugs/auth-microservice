@@ -171,3 +171,4 @@ k8s/secrets.yml
 *.lock
 notebook.ipynb
 dotenv/
+.ruff_cache
