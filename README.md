@@ -23,7 +23,7 @@ cd auth-microservice
 
 * Add `common` submodule
 ```shell
-git submodule add https://gitlab.incubtek.com/incubtek/common-back.git src/common
+git submodule add https://github.com/flavien-hugs/backend-common-code.git src/common
 ```
 
 * Update local `common` submodule
