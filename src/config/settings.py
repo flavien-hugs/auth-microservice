@@ -10,10 +10,10 @@ class AuthBaseConfig(BaseSettings):
     APP_TITLE: str = Field(default="Authentication and user management system", alias="APP_TITLE")
     APP_HOSTNAME: str = Field(default="0.0.0.0", alias="APP_HOSTNAME")
     APP_RELOAD: bool = Field(default=True, alias="APP_RELOAD")
-    PASSWORD_LENGTH: PositiveInt = Field(default=6, alias="PASSWORD_LENGTH")
     FULLNAME_MIN_LENGTH: PositiveInt = Field(default=4, alias="FULLNAME_MIN_LENGTH")
     APP_ACCESS_LOG: bool = Field(default=True, alias="APP_ACCESS_LOG")
     APP_DEFAULT_PORT: PositiveInt = Field(default=9077, alias="APP_DEFAULT_PORT")
+    PASSWORD_REGEX: str = Field(..., alias="PASSWORD_REGEX")
     DEFAULT_PAGIGNIATE_PAGE_SIZE: PositiveInt = Field(default=10, alias="DEFAULT_PAGIGNIATE_PAGE_SIZE")
 
     # USER MODEL NAME

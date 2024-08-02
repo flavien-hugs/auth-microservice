@@ -7,8 +7,8 @@ from src.config import settings
 
 class CreateUser(BaseModel):
     email: EmailStr
-    password: str = Field(..., ge=settings.PASSWORD_LENGTH)
     fullname: Optional[StrictStr] = Field(description=None, ge=settings.FULLNAME_MIN_LENGTH)
+    password: str = Field(..., pattern=settings.PASSWORD_REGEX)
 
 
 class UpdateUser(BaseModel):
