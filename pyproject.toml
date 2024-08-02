@@ -13,6 +13,7 @@ python-slugify = "^8.0.4"
 fastapi-pagination = "^0.12.26"
 pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.0"}
 pydantic-settings = "^2.4.0"
+fastapi-jwt = "^0.3.0"
 
 
 [tool.poetry.group.test.dependencies]

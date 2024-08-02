@@ -2,9 +2,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
+from fastapi_pagination import add_pagination
 from slugify import slugify
 
-from src.config import settings
+from src.common.helpers.appdesc import load_app_description, load_permissions
+from src.common.helpers.exceptions import setup_exception_handlers
+from src.config import settings, shutdown_db, startup_db
+from src.models import User
 from src.routers import auth_router, user_router
 
 BASE_URL = slugify(settings.APP_NAME)
@@ -12,10 +16,17 @@ BASE_URL = slugify(settings.APP_NAME)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    pass
+    await startup_db(app=app, models=[User])
+
+    await load_app_description(mongodb_client=app.mongo_db_client)
+    await load_permissions(mongodb_client=app.mongo_db_client)
+
+    yield
+    await shutdown_db(app=app)
 
 
 app: FastAPI = FastAPI(
+    lifespan=lifespan,
     title=f"{settings.APP_NAME.upper()} API Service",
     summary=f"{settings.APP_TITLE}",
     docs_url=f"/{BASE_URL}/docs",
@@ -24,6 +35,9 @@ app: FastAPI = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(user_router)
+add_pagination(app)
+
+setup_exception_handlers(app)
 
 
 @app.get("/", include_in_schema=False)

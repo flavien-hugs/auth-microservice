@@ -13,7 +13,7 @@ class RequestChangePassword(BaseModel):
 
 
 class LoginUser(RequestChangePassword):
-    password: str = Field(..., pattern=settings.PASSWORD_REGEX)
+    password: str = Field(..., ge=settings.PASSWORD_MIN_LENGTH)
 
 
 class ManageAccount(BaseModel):
@@ -21,8 +21,8 @@ class ManageAccount(BaseModel):
 
 
 class ChangePassword(BaseModel):
-    current_password: str = Field(..., pattern=settings.PASSWORD_REGEX)
-    confirm_password: str = Field(..., pattern=settings.PASSWORD_REGEX)
+    current_password: str = Field(..., ge=settings.PASSWORD_MIN_LENGTH)
+    confirm_password: str = Field(..., ge=settings.PASSWORD_MIN_LENGTH)
 
     @model_validator(mode="before")
     @classmethod

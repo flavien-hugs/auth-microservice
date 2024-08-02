@@ -1,0 +1,66 @@
+- app:
+    name: "auth"
+    title:
+        fr: "Service d'authentification et gestion des utilisateurs"
+        en: "Authentication and user management"
+    permissions:
+        -
+            code: "can-create-user"
+            desc:
+                fr: "Peut ajouter un utilisateur"
+                en: "Can add user"
+        -
+            code: "can-update-user"
+            desc:
+                fr: "Peut mettre à jour les informations d'un utilisateur"
+                en: "Can update user information"
+        -
+            code: "can-read-user"
+            desc:
+                fr: "Peut afficher les information d'un utilisateur"
+                en: "Can view user information"
+        -
+            code: "can-delete-user"
+            desc:
+                fr: "Peut supprimer un utilisateur"
+                en: "Can delete user"
+        -
+            code: "can-create-role"
+            desc:
+                fr: "Peut ajouter un rôle"
+                en: "Can add role"
+        -
+            code: "can-update-role"
+            desc:
+                fr: "Peut mettre à jour un rôle"
+                en: "Can update role"
+        -
+            code: "can-read-role"
+            desc:
+                fr: "Peut afficher un rôle"
+                en: "Can view role"
+        -
+            code: "can-delete-role"
+            desc:
+                fr: "Peut supprimer un rôle"
+                en: "Can delete role"
+        -
+            code: "can-create-permission"
+            desc:
+                fr: "Peut ajouter une permission"
+                en: "Can add permission"
+        -
+            code: "can-update-permission"
+            desc:
+                fr: "Peut mettre à jour une permission"
+                en: "Can update permission"
+        -
+            code: "can-read-permission"
+            desc:
+                fr: "Peut afficher une permission"
+                en: "Can view user information"
+        -
+            code: "can-delete-permission"
+            desc:
+                fr: "Peut supprimer une permission"
+                en: "Can delete permission"
