@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, EmailStr, Field, StrictStr
 
@@ -13,3 +13,4 @@ class CreateUser(BaseModel):
 
 class UpdateUser(BaseModel):
     fullname: Optional[StrictStr] = Field(description=None, ge=settings.FULLNAME_MIN_LENGTH)
+    attributes: Optional[Dict[str, Any]] = Field(default=None)
