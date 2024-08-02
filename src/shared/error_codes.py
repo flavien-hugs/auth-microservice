@@ -2,8 +2,14 @@ from enum import StrEnum
 
 
 class AuthErrorCode(StrEnum):
+    AUTH_MISSING_TOKEN = "auth/missing-token"
+    AUTH_MISSING_SCHEME = "auth/missing-scheme"
     AUTH_NOT_AUTHENTICATED = "auth/no-authenticated"
     AUTH_PASSWORD_MISMATCH = "auth/password-mismatch"
+    AUTH_UNAUTHORIZED_ACCESS = "auth/unauthorized-access"
+    AUTH_EXPIRED_ACCESS_TOKEN = "auth/expired-access-token"
+    AUTH_INVALID_ACCESS_TOKEN = "auth/invalid-access-token"
+    AUTH_INSUFFICIENT_PERMISSION = "auth/insufficient-permission"
 
 
 class UserErrorCode(StrEnum):

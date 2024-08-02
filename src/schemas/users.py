@@ -14,7 +14,15 @@ from src.shared.error_codes import AuthErrorCode
 class CreateUser(BaseModel):
     email: Indexed(EmailStr, pymongo.TEXT, unique=True)
     fullname: Optional[StrictStr] = Field(..., examples=["John Doe"])
+    role: Optional[str] = Field(..., description="User role")
     password: str = Field(default=None, examples=["p@55word"])
+
+    @classmethod
+    @field_validator("email", mode="after")
+    def lowercase_email(cls, value) -> str:
+        if value:
+            return value.lower()
+        return value
 
     @model_validator(mode="before")
     @classmethod
@@ -31,11 +39,11 @@ class CreateUser(BaseModel):
 
 class UpdateUser(BaseModel):
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
+    role: Optional[str] = Field(default=None, description="User role")
     attributes: Optional[Mapping[str, Any]] = Field(default=None, examples=[{"key": "value"}])
 
     @field_validator("attributes", mode="before")
-    @classmethod
-    def slugify_keys(cls, value):
+    def slugify_keys(cls, value):  # noqa: B902
         if value is None:
             return value
         return {slugify(k, separator="_"): v for k, v in value.items()}
