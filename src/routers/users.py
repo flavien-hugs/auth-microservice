@@ -1,12 +1,13 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Query, status
+from fastapi import APIRouter, Body, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 from pymongo.errors import DuplicateKeyError
 
 from src.common.helpers.exceptions import CustomHTTException
+from src.dependences import AuthorizeHTTPBearer
 from src.models import User
 from src.schemas import CreateUser, UpdateUser
 from src.services import users
@@ -28,7 +29,7 @@ async def create_user(payload: CreateUser = Body(...)):
         result = await users.create_user(payload)
     except DuplicateKeyError as err:
         raise CustomHTTException(
-            code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST, message_error=str(err), status_code=status.HTTP_201_CREATED
+            code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST, message_error=str(err), status_code=status.HTTP_400_BAD_REQUEST
         ) from err
     return result
 
@@ -36,6 +37,7 @@ async def create_user(payload: CreateUser = Body(...)):
 @user_router.get(
     "",
     response_model=customize_page(User),
+    dependencies=[Security(AuthorizeHTTPBearer)],
     response_model_exclude={"password"},
     summary="Get all users",
     status_code=status.HTTP_200_OK,
@@ -56,6 +58,7 @@ async def listing_users(
 @user_router.get(
     "/{id}",
     response_model=User,
+    dependencies=[Security(AuthorizeHTTPBearer)],
     response_model_exclude={"password"},
     summary="Get single user",
     status_code=status.HTTP_200_OK,
@@ -67,6 +70,7 @@ async def get_user(id: PydanticObjectId):
 @user_router.patch(
     "/{id}",
     response_model=User,
+    dependencies=[Security(AuthorizeHTTPBearer)],
     response_model_exclude={"password"},
     summary="Update user information",
     status_code=status.HTTP_200_OK,
@@ -77,6 +81,7 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
 
 @user_router.delete(
     "/{id}",
+    dependencies=[Security(AuthorizeHTTPBearer)],
     summary="Delete one user",
     status_code=status.HTTP_200_OK,
 )

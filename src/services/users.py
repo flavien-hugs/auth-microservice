@@ -7,11 +7,13 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.models import User
 from src.schemas import CreateUser, UpdateUser
 from src.shared.error_codes import UserErrorCode
+from src.shared.utils import password_hash
 
 
 async def create_user(user: CreateUser) -> User:
-    result = await User(**user.model_dump()).create()
-    return result
+    new_user = User(**user.model_dump())
+    new_user.password = password_hash(user.password)
+    return await new_user.create()
 
 
 async def get_one_user(user_id: PydanticObjectId) -> User:

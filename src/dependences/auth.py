@@ -39,16 +39,16 @@ class CustomAccessBearer:
         return cls._jwt_access_bearer
 
     @classmethod
-    def access_token(cls, data: dict) -> str:
+    def access_token(cls, data: dict, user_id: str) -> str:
         access_bearer = cls._conf_jwt_access_bearer()
         expires_delta = timedelta(minutes=jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        return access_bearer.create_access_token(subject=data, expires_delta=expires_delta)
+        return access_bearer.create_access_token(subject=data, expires_delta=expires_delta, unique_identifier=user_id)
 
     @classmethod
-    def refresh_token(cls, data: dict) -> str:
+    def refresh_token(cls, data: dict, user_id: str) -> str:
         access_bearer = cls._conf_jwt_access_bearer()
         expires_delta = timedelta(minutes=jwt_settings.REFRESH_TOKEN_EXPIRE_MINUTES)
-        return access_bearer.create_refresh_token(subject=data, expires_delta=expires_delta)
+        return access_bearer.create_refresh_token(subject=data, expires_delta=expires_delta, unique_identifier=user_id)
 
     @classmethod
     def decode_access_token(cls, token: str) -> dict:

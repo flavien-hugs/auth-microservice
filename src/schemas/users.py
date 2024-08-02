@@ -12,8 +12,8 @@ from src.shared.error_codes import AuthErrorCode
 
 
 class CreateUser(BaseModel):
-    email: Indexed(EmailStr, pymongo.TEXT, unique=True)
-    fullname: Optional[StrictStr] = Field(..., examples=["John Doe"])
+    email: Indexed(EmailStr, pymongo.TEXT)
+    fullname: Optional[Indexed(str, pymongo.TEXT)] = Field(..., examples=["John Doe"])
     role: Optional[str] = Field(..., description="User role")
     password: str = Field(default=None, examples=["p@55word"])
 
