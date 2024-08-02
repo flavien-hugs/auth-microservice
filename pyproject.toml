@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "auth-microservice"
+version = "0.1.0"
+description = "Service d'authentification et de gestion d'utilisateurs"
+authors = ["Flavien HUGS <flavienhugs@pm.me>"]
+packages = [{include = "src" }]
+
+[tool.poetry.dependencies]
+python = "^3.12"
+fastapi = "^0.111.1"
+beanie = "^1.26.0"
+python-slugify = "^8.0.4"
+fastapi-pagination = "^0.12.26"
+pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.0"}
+pydantic-settings = "^2.4.0"
+
+
+[tool.poetry.group.test.dependencies]
+python-dotenv = "^1.0.1"
+
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
