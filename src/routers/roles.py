@@ -1,7 +1,7 @@
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Body, Query, Security, status
+from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 

@@ -1,7 +1,8 @@
-from fastapi import Request, status
-from fastapi.responses import JSONResponse
 from beanie import PydanticObjectId
+from fastapi import Request, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
+
 from src.common.helpers.exceptions import CustomHTTException
 from src.dependences.auth import CustomAccessBearer
 from src.models import User

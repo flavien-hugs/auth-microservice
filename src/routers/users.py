@@ -1,14 +1,14 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Query, Depends, Security, status
+from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
 from src.dependences import AuthorizeHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
-from src.services import users, roles
+from src.services import roles, users
 from src.shared.utils import customize_page, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)

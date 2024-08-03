@@ -3,6 +3,7 @@ import os
 from typing import Sequence
 
 from beanie import PydanticObjectId
+from slugify import slugify
 from starlette import status
 
 from src.common.helpers.exceptions import CustomHTTException
@@ -10,10 +11,7 @@ from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
 from src.shared.error_codes import UserErrorCode
 from src.shared.utils import password_hash
-
 from .roles import get_one_role
-
-from slugify import slugify
 
 logger = logging.getLogger(__name__)
 

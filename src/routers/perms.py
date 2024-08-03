@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Security, Depends, status
+from fastapi import APIRouter, Depends, Security, status
+
 from src.dependences import AuthorizeHTTPBearer, CheckPermissionsHandler
 
 perm_router = APIRouter(prefix="/permissions", tags=["PERMISSIONS"], redirect_slashes=False)

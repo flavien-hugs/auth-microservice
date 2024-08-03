@@ -7,15 +7,13 @@ from fastapi_pagination import add_pagination
 from slugify import slugify
 
 from src.common.helpers.appdesc import load_app_description, load_permissions
+from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exceptions import setup_exception_handlers
 from src.config import settings, shutdown_db, startup_db
 from src.models import Role, User
 from src.routers import auth_router, perm_router, role_router, user_router
-
 from src.services.roles import create_first_role
 from src.services.users import create_first_user
-
-from src.common.helpers.error_codes import AppErrorCode
 
 BASE_URL = slugify(settings.APP_NAME)
 
