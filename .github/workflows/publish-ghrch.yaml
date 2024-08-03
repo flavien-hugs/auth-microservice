@@ -1,0 +1,39 @@
+name: Docker Image CI for GHRC
+
+on: [push]
+
+jobs:
+    staging:
+        runs-on: ubuntu-latest
+        env:
+            ACTIONS_RUNNER_DEBUG: true
+            ACTIONS_STEP_DEBUG: true
+        environment:
+            name: build
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Login to Docker registry
+              run: |
+                echo "Logging into Docker registry..."
+                echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
+                echo "Logging into Docker registry success"
+
+            - name: Determine image tag and build Docker image
+              id: build
+              run: |
+                if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+                  DOCKER_TAG="latest"
+                elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+                  DOCKER_TAG="dev"
+                elif [[ "${{ github.ref }}" =~ ^refs/heads/rc/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+                  DOCKER_TAG="${{ github.ref }}_RC"
+                else
+                  exit 1
+                fi
+
+                echo "Building Docker image with tag $TAG..."
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG
+                echo "Build and push Docker image ok ..."
