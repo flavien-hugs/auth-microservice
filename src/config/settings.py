@@ -17,7 +17,8 @@ class AuthBaseConfig(BaseSettings):
     DEFAULT_PAGIGNIATE_PAGE_SIZE: PositiveInt = Field(default=10, alias="DEFAULT_PAGIGNIATE_PAGE_SIZE")
 
     # USER MODEL NAME
-    USER_MODEL_NAME: str = Field(default="auth", alias="USER_MODEL_NAME")
+    USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")
+    ROLE_MODEL_NAME: str = Field(..., alias="ROLE_MODEL_NAME")
 
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")

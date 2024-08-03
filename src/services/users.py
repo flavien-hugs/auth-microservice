@@ -11,12 +11,26 @@ from src.shared.utils import password_hash
 
 
 async def create_user(user: CreateUser) -> User:
+    """
+    Créer un nouvel utilisateur
+
+    :param user:
+    :type user:
+    :return:
+    :rtype:
+    """
     new_user = User(**user.model_dump())
     new_user.password = password_hash(user.password)
     return await new_user.create()
 
 
 async def get_one_user(user_id: PydanticObjectId) -> User:
+    """
+    :param user_id:
+    :type user_id:
+    :return:
+    :rtype:
+    """
     if (result := await User.get(document_id=PydanticObjectId(user_id))) is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
@@ -27,12 +41,16 @@ async def get_one_user(user_id: PydanticObjectId) -> User:
 
 
 async def update_user(user_id: PydanticObjectId, update_user: UpdateUser) -> User:
-    if (user := await User.get(document_id=PydanticObjectId(user_id))) is None:
-        raise CustomHTTException(
-            code_error=UserErrorCode.USER_NOT_FOUND,
-            message_error=f"User with '{user_id}' not found.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    """
+
+    :param user_id:
+    :type user_id:
+    :param update_user:
+    :type update_user:
+    :return:
+    :rtype:
+    """
+    user = await get_one_user(user_id=user_id)
     result = await user.set({**update_user.model_dump(exclude_none=True, exclude_unset=True)})
     return result
 

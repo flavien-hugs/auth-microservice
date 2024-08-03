@@ -43,7 +43,7 @@ async def create_user(payload: CreateUser = Body(...)):
     status_code=status.HTTP_200_OK,
 )
 async def listing_users(
-    query: Optional[str] = Query(None, description="Filter by source"),
+    query: Optional[str] = Query(None, description="Filter by user"),
     sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
 ):
     search = {}
@@ -51,7 +51,7 @@ async def listing_users(
         search["$text"] = {"$search": query}
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
-    users = await User.find(search).sort([("created", sorted)]).to_list()
+    users = await User.find(search).sort([("created_at", sorted)]).to_list()
     return paginate(users)
 
 
