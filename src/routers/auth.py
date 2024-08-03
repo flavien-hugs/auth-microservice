@@ -12,6 +12,8 @@ async def login(payload: LoginUser = Body(...)):
     return await auth.login(payload)
 
 
-@auth_router.get("/logout", dependencies=[Security(AuthorizeHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK)
+@auth_router.get(
+    "/logout", dependencies=[Security(AuthorizeHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
+)
 async def logout(request: Request):
     return await auth.logout(request)

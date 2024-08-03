@@ -1,3 +1,5 @@
+import logging
+import os
 from typing import Sequence, Set
 
 from beanie import PydanticObjectId
@@ -10,6 +12,8 @@ from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
 from .perms import get_all_permissions
 
+logger = logging.getLogger(__name__)
+
 
 async def create_role(role: RoleModel) -> Role:
     """
@@ -21,6 +25,31 @@ async def create_role(role: RoleModel) -> Role:
     """
     new_role = await Role(**role.model_dump()).create()
     return new_role
+
+
+async def create_first_role():
+    paylaod = {"name": os.getenv("DEFAULT_ADMIN_ROLE"), "description": os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")}
+
+    slug_value = os.getenv("DEFAULT_ADMIN_ROLE")
+    if await Role.find_one({"slug": slug_value}).exists():
+        logger.info("Role is exist")
+        return
+    else:
+        all_permissions = await get_all_permissions()
+        new_permissions = []
+
+        for permission in all_permissions:
+            service_info = {"name": permission["app"], "title": permission["title"]}
+            service_permissions = []
+
+            for perm in permission["permissions"]:
+                service_permissions.append({"code": perm["code"], "description": perm["desc"]})
+
+            if service_permissions:
+                new_permissions.append({"service_info": service_info, "permissions": service_permissions})
+
+        await Role(**paylaod, permissions=new_permissions).create()
+        logger.info("Create role successfully !")
 
 
 async def get_one_role(role_id: PydanticObjectId) -> Role:
@@ -42,7 +71,9 @@ async def get_one_role(role_id: PydanticObjectId) -> Role:
 
 async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role:
     role = await get_one_role(role_id=role_id)
-    result = await role.set({**update_role.model_dump(exclude_none=True, exclude_unset=True), "slug": slugify(update_role.name)})
+    result = await role.set(
+        {**update_role.model_dump(exclude_none=True, exclude_unset=True), "slug": slugify(update_role.name)}
+    )
     return result
 
 

@@ -19,6 +19,7 @@ class UserErrorCode(StrEnum):
     USER_CREATE_FAILED = "users/create-user-failed"
     USER_UPDATE_INFO_FAILED = "users/update-user-failed"
     USER_EMAIL_ALREADY_EXIST = "users/email-alreary-exist"
+    FIRST_USER_ALREADY_EXIST = "users/first-user-alreary-exist"
 
 
 class RoleErrorCode(StrEnum):

@@ -1,12 +1,14 @@
-from fastapi import status, Request
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
-
+from beanie import PydanticObjectId
+from fastapi.encoders import jsonable_encoder
 from src.common.helpers.exceptions import CustomHTTException
 from src.dependences.auth import CustomAccessBearer
 from src.models import User
 from src.schemas import LoginUser
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import verify_password
+from .roles import get_one_role
 
 
 async def login(payload: LoginUser) -> JSONResponse:
@@ -31,15 +33,16 @@ async def login(payload: LoginUser) -> JSONResponse:
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    user_data = user.model_dump(exclude={"password", "attributes", "created_at", "updated_at"})
+    role = await get_one_role(role_id=PydanticObjectId(user.role))
+    user_data = user.model_dump(exclude={"password", "attributes", "is_primary"})
 
     response_data = {
-        "access_token": CustomAccessBearer.access_token(data=user_data, user_id=str(user.id)),
-        "referesh_token": CustomAccessBearer.refresh_token(data=user_data, user_id=str(user.id)),
+        "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
+        "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-
-    return JSONResponse(content=response_data, status_code=status.HTTP_200_OK)
+    response_data["user"]["role"] = role.model_dump()
+    return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
 
 async def logout(request: Request) -> JSONResponse:
@@ -54,9 +57,9 @@ async def logout(request: Request) -> JSONResponse:
         "role": data["role"],
         "is_active": data["is_active"],
     }
-    reqponse_data = {
+    response_data = {
         "access_token": CustomAccessBearer.access_token(data=user_data, user_id=decode_token["jti"]),
         "referesh_token": CustomAccessBearer.refresh_token(data=user_data, user_id=decode_token["jti"]),
     }
 
-    return JSONResponse(status_code=status.HTTP_200_OK, content=reqponse_data)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(response_data))

@@ -1,9 +1,8 @@
-from typing import Any, Mapping, Optional
+from typing import Any, Dict, Optional
 
 import pymongo
-from beanie import Indexed
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, StrictStr
-from slugify import slugify
+from beanie import Indexed, PydanticObjectId
+from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
 from starlette import status
 
 from src.common.helpers.exceptions import CustomHTTException
@@ -13,8 +12,9 @@ from src.shared.error_codes import AuthErrorCode
 
 class CreateUser(BaseModel):
     email: Indexed(EmailStr, pymongo.TEXT)
-    fullname: Optional[Indexed(str, pymongo.TEXT)] = Field(..., examples=["John Doe"])
-    role: Optional[str] = Field(..., description="User role")
+    fullname: Optional[StrictStr] = Field(..., examples=["John Doe"])
+    role: Optional[PydanticObjectId] = Field(..., description="User role")
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
     password: str = Field(default=None, examples=["p@55word"])
 
     @classmethod
@@ -24,12 +24,10 @@ class CreateUser(BaseModel):
             return value.lower()
         return value
 
-    @model_validator(mode="before")
-    @classmethod
-    def validate_password(cls, values: dict):
-        password = values.get("password")
-        if len(password) > settings.PASSWORD_MIN_LENGTH:
-            return values
+    @field_validator("password", mode="before")
+    def validate_password_length(cls, value):  # noqa: B902
+        if len(value) > settings.PASSWORD_MIN_LENGTH:
+            return value
         raise CustomHTTException(
             code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
             message_error="The password must be 6 characters or more.",
@@ -38,12 +36,6 @@ class CreateUser(BaseModel):
 
 
 class UpdateUser(BaseModel):
+    role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
-    role: Optional[str] = Field(default=None, description="User role")
-    attributes: Optional[Mapping[str, Any]] = Field(default=None, examples=[{"key": "value"}])
-
-    @field_validator("attributes", mode="before")
-    def slugify_keys(cls, value):  # noqa: B902
-        if value is None:
-            return value
-        return {slugify(k, separator="_"): v for k, v in value.items()}
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])

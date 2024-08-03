@@ -14,7 +14,7 @@ from .mixins import DatetimeTimestamp
 
 class Role(RoleModel, DatetimeTimestamp, Document):
     permissions: List[Dict] = []
-    slug: Optional[Indexed(str, pymongo.TEXT, unique=True, sparse=True)] = None
+    slug: Optional[Indexed(str, pymongo.TEXT, unique=True)] = None
 
     class Settings:
         name = settings.ROLE_MODEL_NAME

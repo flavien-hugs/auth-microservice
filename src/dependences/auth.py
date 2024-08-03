@@ -12,6 +12,7 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings
+from src.services.roles import get_one_role
 from src.shared.error_codes import AuthErrorCode
 
 logging.basicConfig(level=logging.DEBUG)
@@ -82,8 +83,15 @@ class CustomAccessBearer:
     @classmethod
     async def check_permissions(cls, token: str, required_permissions: Sequence = ()) -> bool:
         docode_token = cls.decode_access_token(token)
-        user_role = docode_token["subject"]["data"]["role"]
-        user_permissions = [perm for perm in user_role]
+        user_role_id = docode_token["subject"]["role"]
+
+        role = await get_one_role(role_id=user_role_id)
+
+        user_permissions = []
+        for permissions in role.permissions:
+            for perm in permissions["permissions"]:
+                user_permissions.append(perm["code"])
+
         if all(perm in user_permissions for perm in required_permissions) is False:
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
