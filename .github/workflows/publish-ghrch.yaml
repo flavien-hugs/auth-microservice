@@ -24,7 +24,6 @@ jobs:
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
 
             - name: Verify pyproject.toml location
-              working-directory: /home/runner/work/auth-microservice
               run: |
                 echo "Current directory: $(pwd)"
                 ls -la
