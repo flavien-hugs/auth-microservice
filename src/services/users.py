@@ -20,16 +20,16 @@ async def create_user(user: CreateUser) -> User:
     """
     Créer un nouvel utilisateur
 
-    :param user:
-    :type user:
-    :return:
-    :rtype:
+    :param user: Les informations de l'utilisateur à créer
+    :type user: CreateUser
+    :return: Le nouvel utilisateur créé
+    :rtype: User
     """
     await get_one_role(role_id=PydanticObjectId(user.role))
-    if User.find_one({"email": user.email.lower(), "is_active": True}).exists() is True:
+    if await User.find_one({"email": user.email, "is_active": True}).exists():
         raise CustomHTTException(
             code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST,
-            message_error=f"User with email '{user.email.lower()}' alreay exits",
+            message_error=f"User with email '{user.email.lower()}' already exists",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

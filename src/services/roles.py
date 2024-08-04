@@ -121,7 +121,7 @@ async def delete_role(role_id: PydanticObjectId) -> None:
     :return:
     :rtype:
     """
-    await Role.get(document_id=PydanticObjectId(role_id)).delete()
+    await Role.find_one({"_id": PydanticObjectId(role_id)}).delete()
 
 
 async def delete_many_roles(role_ids: Sequence[PydanticObjectId]) -> None:

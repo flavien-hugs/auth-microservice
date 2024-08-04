@@ -14,11 +14,19 @@ pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.0"}
 pydantic-settings = "^2.4.0"
 fastapi-jwt = "^0.3.0"
 python-jose = "^3.3.0"
-fastapi = {extras = ["standard"], version = "^0.112.0"}
+fastapi = {extras = ["all"], version = "^0.112.0"}
 
 
 [tool.poetry.group.test.dependencies]
-python-dotenv = "^1.0.1"
+pytest = "^8.3.2"
+coverage = "^7.6.0"
+pytest-mock = "^3.14.0"
+pytest-asyncio = "^0.23.8"
+mongomock-motor = "^0.0.31"
+faker = "^26.1.0"
+setuptools = "^72.1.0"
+pytest-cov = "^5.0.0"
+pytest-dotenv = "^0.5.2"
 
 
 [tool.poetry.group.dev.dependencies]
@@ -31,3 +39,35 @@ app = 'src.cli:app'
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 120
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | \.docker
+    | \*.egg-info
+    | _build
+    | buck-out
+    | build
+    | dist
+  )/
+)
+'''
+
+[tool.pytest.ini_options]
+env_files = 'tests/test.env'
+env_override_existing_values = 1
+python_files = "test_*.py"
+asyncio_mode = "auto"
+filterwarnings = [
+  "ignore",
+  "ignore:.*U.*mode is deprecated:DeprecationWarning"
+]

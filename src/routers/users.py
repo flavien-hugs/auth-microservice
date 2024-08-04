@@ -39,7 +39,7 @@ async def create_user(payload: CreateUser = Body(...)):
 async def listing_users(
     query: Optional[str] = Query(None, description="Filter by user"),
     # is_primary: bool = Query(default=False, description="Filter grant super admin"),
-    is_active: bool = Query(default=False, description="Filter account is active or disable"),
+    is_active: bool = Query(default=True, description="Filter account is active or disable"),
     sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
 ):
     # search = {"is_primary": is_primary}
