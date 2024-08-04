@@ -44,6 +44,8 @@ jobs:
         runs-on: ubuntu-latest
         env:
             DOCKER_TLS_CERTDIR: ""
+            GHRC_USERNAME: ${{ secrets.GHRC_USERNAME }}
+            GHRC_PASSWORD: ${{ secrets.GHRC_PASSWORD }}
             REGISTRY_ADDR: ${{ secrets.GHRC_REGISTRY_ADDR }}
 
         steps:
@@ -56,7 +58,7 @@ jobs:
             - name: Login to Docker registry
               run: |
                 echo "Logging into Docker registry..."
-                echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
+                echo "${{ env.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ env.GHRC_USERNAME }} --password-stdin
                 echo "Logging into Docker registry success"
 
             - name: Determine Docker image tag and build
