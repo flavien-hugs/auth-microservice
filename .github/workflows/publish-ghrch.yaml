@@ -12,9 +12,6 @@ jobs:
           matrix:
             python-version:
               - "3.x"
-        env:
-            ACTIONS_RUNNER_DEBUG: true
-            ACTIONS_STEP_DEBUG: true
 
         steps:
             - name: Checkout code
@@ -31,27 +28,21 @@ jobs:
 
             - name: Verify pyproject.toml location
               run: |
-                echo "Current directory: $(pwd)"
-                ls -la
                 if [ ! -f pyproject.toml ]; then
                     echo "pyproject.toml not found in $(pwd)"
                     exit 1
                 fi
 
             - name: Install pipx and Set up Poetry
-              working-directory: /home/runner/work
               run: |
                 python --version
-                python -m pip install pipx
-                python -m pipx ensurepath
                 python -m pipx install poetry
-                export PATH=$PATH:/root/.local/bin
+                python -m pipx ensurepath
                 poetry env use python
                 poetry run pip install --upgrade pip setuptools
                 poetry install --no-root
 
             - name: Run Tests
-              working-directory: /home/runner/work
               run: |
                 echo "Starting tests ..."
                 poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
@@ -65,9 +56,6 @@ jobs:
     staging:
         needs: [tests]
         runs-on: ubuntu-latest
-        env:
-            ACTIONS_RUNNER_DEBUG: true
-            ACTIONS_STEP_DEBUG: true
         environment:
             name: build
 
@@ -84,7 +72,7 @@ jobs:
                 echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
                 echo "Logging into Docker registry success"
 
-            - name: Determine image tag and build
+            - name: Determine image tag and build (improved logic)
               id: build
               run: |
                 if [[ "${{ github.ref }}" =~ ^refs/heads/rc/([0-9]+\.[0-9]+\.[0-9]+)$  ]]; then
