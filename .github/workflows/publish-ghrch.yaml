@@ -15,29 +15,24 @@ jobs:
 
         steps:
             - name: Checkout code
-              uses: actions/setup-python@v4
+              uses: actions/checkout@v3
               with:
                 submodules: recursive
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
 
             - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v4
+              uses: actions/setup-python@v3
               with:
                 python-version: ${{ matrix.python-version }}
                 architecture: 'x64'
 
-            - name: Verify pyproject.toml location
-              run: |
-                if [ ! -f pyproject.toml ]; then
-                    echo "pyproject.toml not found in $(pwd)"
-                    exit 1
-                fi
-
-            - name: Install pipx and Set up Poetry
+            - name: Install pipx, Poetry and Upgrade pip/setuptools
               run: |
                 python --version
-                python -m pipx install poetry
+                python -m pip install pipx
                 python -m pipx ensurepath
+                python -m pipx install poetry
+                export PATH=$PATH:/root/.local/bin
                 poetry env use python
                 poetry run pip install --upgrade pip setuptools
                 poetry install --no-root
