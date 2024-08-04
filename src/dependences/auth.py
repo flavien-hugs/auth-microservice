@@ -5,7 +5,7 @@ from typing import List, Sequence
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
 from fastapi_jwt import JwtAccessBearer
-from jose import jwt, JWTError
+from jose import jwt, JWTError, ExpiredSignatureError
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -72,11 +72,10 @@ class CustomAccessBearer:
                 message_error="Token has expired !",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
-        except JWTError as err:
-            logger.info("err --> ", err)
+        except (ExpiredSignatureError, JWTError) as err:
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN,
-                message_error="Token is invalid !",
+                message_error=str(err),
                 status_code=status.HTTP_401_UNAUTHORIZED,
             ) from err
 
@@ -92,7 +91,7 @@ class CustomAccessBearer:
             for perm in permissions["permissions"]:
                 user_permissions.append(perm["code"])
 
-        if all(perm in user_permissions for perm in required_permissions) is False:
+        if not all(perm in user_permissions for perm in required_permissions):
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
                 message_error="You do not have the necessary permissions to access this resource.",

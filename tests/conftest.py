@@ -7,7 +7,7 @@ from beanie import init_beanie
 from httpx import AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
-from src.config import settings
+from src.config import settings, jwt_settings
 
 
 @pytest.fixture
@@ -47,27 +47,56 @@ async def clean_db(fixture_models, mock_mongodb_client):
 
 
 @pytest.fixture()
-def mock_auth_token_bearer():
+def mock_authorize_bearer():
     with mock.patch("src.routers.users.AuthorizeHTTPBearer.__call__", return_value=True):
         yield
 
 
 @pytest.fixture()
 def mock_chek_permissions_handler():
-    with mock.patch(
-            "src.routers.users.CheckPermissionsHandler.__call__", return_value=True
-    ):
+    with mock.patch("src.routers.users.CheckPermissionsHandler.__call__", return_value=True):
         yield
 
 
 @pytest.fixture(autouse=True)
 async def http_client_api(mock_app_instance, clean_db):
     async with AsyncClient(
-            app=mock_app_instance,
-            base_url="http://auth.localhost.com",
-            follow_redirects=True,
+        app=mock_app_instance,
+        base_url="http://auth.localhost.com",
+        follow_redirects=True,
     ) as client:
         yield client
+
+
+@pytest.fixture()
+def fake_jwt_access_bearer():
+    class FakeJwtAccessBearer:
+        def __init__(self, secret_key, algorithm, access_expires_delta, refresh_expires_delta):
+            self.secret_key = secret_key
+            self.algorithm = algorithm
+            self.access_expires_delta = access_expires_delta
+            self.refresh_expires_delta = refresh_expires_delta
+
+        @staticmethod
+        def create_access_token(subject, expires_delta, unique_identifier):
+            return "fake_access_token"
+
+        @staticmethod
+        def create_refresh_token(subject, expires_delta, unique_identifier):
+            return "fake_refresh_token"
+
+    return FakeJwtAccessBearer
+
+
+@pytest.fixture
+def mock_jwt_settings(monkeypatch):
+    class MockJwtSettings:
+        JWT_SECRET_KEY = jwt_settings.JWT_SECRET_KEY
+        JWT_ALGORITHM = jwt_settings.JWT_ALGORITHM
+        ACCESS_TOKEN_EXPIRE_MINUTES = jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        REFRESH_TOKEN_EXPIRE_MINUTES = jwt_settings.REFRESH_TOKEN_EXPIRE_MINUTES
+
+    monkeypatch.setattr("src.config.jwt_settings", MockJwtSettings())
 
 
 @pytest.fixture()
@@ -75,6 +104,12 @@ def fake_role_data(fake_data):
     return {
         "name": fake_data.unique.name(),
         "description": fake_data.text(),
+        "permissions": [
+            {
+                "service_info": {"name": fake_data.name().lower(), "title": fake_data.name()},
+                "permissions": [{"code": f"perm-{i}"} for i in range(1, 2)],
+            }
+        ],
     }
 
 
@@ -91,7 +126,7 @@ def fake_user_data(fake_role_collection, fake_data):
         "fullname": fake_data.name(),
         "role": str(fake_role_collection.id),
         "attributes": {"city": fake_data.city()},
-        "password": fake_data.password()
+        "password": fake_data.password(),
     }
 
 
