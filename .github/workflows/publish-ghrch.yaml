@@ -11,7 +11,7 @@ jobs:
             max-parallel: 4
             matrix:
                 python-version:
-                    - "3.12.x"
+                    - "3.x"
         env:
             ACTIONS_RUNNER_DEBUG: true
             ACTIONS_STEP_DEBUG: true
