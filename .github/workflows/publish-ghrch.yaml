@@ -1,15 +1,59 @@
 name: Docker Image CI for GHRC
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
-    staging:
+    tests:
         runs-on: ubuntu-latest
-        env:
-            ACTIONS_RUNNER_DEBUG: true
-            ACTIONS_STEP_DEBUG: true
+        environment:
+          name: tests
+        strategy:
+          max-parallel: 4
+          matrix:
+            python-version:
+              - "3.x"
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+              with:
+                submodules: recursive
+                token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: Install pipx, Poetry and Upgrade pip/setuptools
+              run: |
+                python --version
+                python -m pip install pipx
+                python -m pipx ensurepath
+                python -m pipx install poetry
+                export PATH=$PATH:/root/.local/bin
+                poetry env use python
+                poetry run pip install --upgrade pip setuptools
+                poetry install --no-root
+
+            - name: Run Tests
+              run: |
+                echo "Starting tests ..."
+                poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@v3
+              with:
+                name: coverage
+                path: coverage.xml
+
+    staging:
+        needs: [tests]
+        runs-on: ubuntu-latest
         environment:
             name: build
+
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -23,20 +67,21 @@ jobs:
                 echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
                 echo "Logging into Docker registry success"
 
-            - name: Determine image tag and build Docker image
+            - name: Determine image tag and build (improved logic)
               id: build
               run: |
                 if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
-                  DOCKER_TAG="latest"
+                  DOCKER_TAG_NAME="latest"
+                elif [[ "${{ github.ref }}" == "refs/heads/preprod" ]]; then
+                  DOCKER_TAG_NAME="preprod"
                 elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
-                  DOCKER_TAG="dev"
-                elif [[ "${{ github.ref }}" =~ ^refs/heads/rc/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-                  DOCKER_TAG="${{ github.ref }}_RC"
+                  DOCKER_TAG_NAME="dev"
                 else
+                  echo "No valid tag found, exiting..."
                   exit 1
                 fi
 
-                echo "Building Docker image with tag $TAG..."
-                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG .
-                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG
+                echo "Building Docker image with tag $DOCKER_TAG_NAME ..."
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME
                 echo "Build and push Docker image ok ..."

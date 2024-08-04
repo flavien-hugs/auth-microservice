@@ -8,9 +8,7 @@ from src.config import settings, shutdown_db, startup_db
 @pytest.mark.asyncio
 @mock.patch("src.config.settings")
 @mock.patch("src.config.database.init_beanie", return_value=None)
-async def test_startup_db(
-        mock_settings, mock_init_beanie, mock_mongodb_client, mock_app_instance, fixture_models
-):
+async def test_startup_db(mock_settings, mock_init_beanie, mock_mongodb_client, mock_app_instance, fixture_models):
     mock_settings.return_value = mock.Mock(MONGODB_URI=settings.MONGODB_URI, DB_NAME=settings.MONGODB_URI)
 
     await startup_db(app=mock_app_instance, models=[fixture_models.User, fixture_models.Role])
