@@ -24,6 +24,7 @@ jobs:
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
 
             - name: Verify pyproject.toml location
+              working-directory: /home/runner/work/auth-microservice
               run: |
                 echo "Current directory: $(pwd)"
                 ls -la
@@ -38,12 +39,14 @@ jobs:
                 python-version: ${{ matrix.python-version }}
 
             - name: Install pipx and poetry
+              working-directory: /home/runner/work/auth-microservice
               run: |
                 python -m pip install pipx
                 python -m pipx ensurepath
                 python -m pipx install poetry
 
             - name: Set up Poetry
+              working-directory: /home/runner/work/auth-microservice
               run: |
                 export PATH=$PATH:/root/.local/bin
                 poetry env use python
@@ -51,6 +54,7 @@ jobs:
                 poetry install --no-root
 
             - name: Run Tests
+              working-directory: /home/runner/work/auth-microservice
               run: |
                 echo "Starting tests ..."
                 poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
