@@ -70,7 +70,7 @@ jobs:
             - name: Determine image tag and build (improved logic)
               id: build
               run: |
-                if [[ ${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+                if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
                   DOCKER_TAG_NAME="latest"
                 elif [[ "${{ github.ref }}" == "refs/heads/preprod" ]]; then
                   DOCKER_TAG_NAME="preprod"
