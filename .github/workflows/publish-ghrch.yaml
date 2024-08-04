@@ -28,6 +28,12 @@ jobs:
               with:
                 python-version: ${{ matrix.python-version }}
 
+            - name: Install pipx and poetry
+              run: |
+                python -m pip install pipx
+                python -m pipx ensurepath
+                python -m pipx install poetry
+
             - name: Set up Poetry
               run: |
                 export PATH=$PATH:/root/.local/bin
