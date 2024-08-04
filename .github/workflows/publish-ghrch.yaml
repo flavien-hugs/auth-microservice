@@ -82,6 +82,6 @@ jobs:
                 fi
 
                 echo "Building Docker image with tag $DOCKER_TAG_NAME ..."
-                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG .
-                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME
                 echo "Build and push Docker image ok ..."
