@@ -38,6 +38,7 @@ app: FastAPI = FastAPI(
     summary=f"{settings.APP_TITLE}",
     docs_url=f"/{BASE_URL}/docs",
     openapi_url=f"/{BASE_URL}/openapi.json",
+    root_path_in_servers=False,
 )
 
 app.include_router(auth_router)
