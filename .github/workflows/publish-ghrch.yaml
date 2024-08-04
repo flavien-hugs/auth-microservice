@@ -5,13 +5,10 @@ on: [push, pull_request]
 jobs:
     tests:
         runs-on: ubuntu-latest
-        environment:
-            name: tests
         strategy:
-            max-parallel: 4
-            matrix:
-                python-version:
-                    - "3.x"
+          matrix:
+            python-version:
+              - "3.x"
         env:
             ACTIONS_RUNNER_DEBUG: true
             ACTIONS_STEP_DEBUG: true
@@ -37,8 +34,7 @@ jobs:
             - name: Set up Poetry
               run: |
                 export PATH=$PATH:/root/.local/bin
-                poetry env use python
-                poetry run pip install --upgrade pip setuptools
+                poetry config virtualenvs.create false
                 poetry install --no-root
 
             - name: Run Tests
