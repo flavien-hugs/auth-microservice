@@ -5,53 +5,62 @@ on: [push, pull_request]
 jobs:
     tests:
         runs-on: ubuntu-latest
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-
-            - name: Set up Python
-              uses: actions/setup-python@v4
-              with:
-                  python-version: "3.x"
-
-            - name: Install pipx and poetry
-              run: |
-                  python -m pip install pipx
-                  python -m pipx ensurepath
-                  python -m pipx install poetry
-
-            - name: Set up Poetry
-              run: |
-                  export PATH=$PATH:/root/.local/bin
-                  poetry env use python
-                  poetry run pip install --upgrade pip setuptools
-                  poetry install --no-root
-
-            - name: Run tests
-              run: |
-                  echo "Running tests"
-                  poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
-
-            - name: Upload coverage report
-              uses: actions/upload-artifact@v3
-              with:
-                  name: coverage
-                  path: coverage.xml
-
-
-    build:
-        needs: [tests]
-        runs-on: ubuntu-latest
+        environment:
+            name: tests
+        strategy:
+            max-parallel: 4
+            matrix:
+                python-version:
+                    - "3.12.x"
         env:
             ACTIONS_RUNNER_DEBUG: true
             ACTIONS_STEP_DEBUG: true
 
         steps:
             - name: Checkout code
-              uses: actions/checkout@v4
+              uses: actions/setup-python@v4
               with:
                 submodules: true
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+
+            - name: Set up Poetry
+              run: |
+                export PATH=$PATH:/root/.local/bin
+                poetry env use python
+                poetry run pip install --upgrade pip setuptools
+                poetry install --no-root
+
+            - name: Run Tests
+              run: |
+                echo "Starting tests ..."
+                poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
+
+            - name: Upload coverage report
+              uses: actions/upload-artifact@v3
+              with:
+                name: coverage
+                path: coverage.xml
+
+    staging:
+        needs: [tests]
+        runs-on: ubuntu-latest
+        env:
+            ACTIONS_RUNNER_DEBUG: true
+            ACTIONS_STEP_DEBUG: true
+        environment:
+            name: build
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+              with:
+                  submodules: true
+                  token: ${{ secrets.GH_SUBMODULE_TOKEN }}
 
             - name: Login to Docker registry
               run: |
@@ -59,22 +68,23 @@ jobs:
                 echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
                 echo "Logging into Docker registry success"
 
-            - name: Determine Docker image tag and build
+            - name: Determine image tag and build
+              id: build
               run: |
-                 if [[ "${{ github.ref }}" =~ ^refs/heads/rc/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-                    DOCKER_TAG_NAME="${BASH_REMATCH[1]}_RC"
-                 elif [[ "${{ github.ref }}" =~ ^refs/tags/([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-                    DOCKER_TAG_NAME="${BASH_REMATCH[1]}"
-                 elif [[ "${{ github.ref }}" == "refs/heads/master" ]]; then
-                    DOCKER_TAG_NAME="latest"
-                 elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+                if [[ "${{ github.ref }}" =~ ^refs/heads/rc/([0-9]+\.[0-9]+\.[0-9]+)$  ]]; then
+                  DOCKER_TAG_NAME="${BASH_REMATCH[1]}_RC"
+                elif [[ "${{ github.ref }}" =~ ^refs/tags/([0-9]+\.[0-9]+\.[0-9]+)$" ]]; then
+                  DOCKER_TAG_NAME="${BASH_REMATCH[1]}"
+                elif [[ ${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+                  DOCKER_TAG_NAME="latest"
+                elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
                     DOCKER_TAG_NAME="dev"
-                 else
-                    echo "No valid tag found, exiting..."
-                    exit 1
-                 fi
+                else
+                  echo "No valid tag found, exiting..."
+                  exit 1
+                fi
 
-                echo "Building Docker image with tag $DOCKER_TAG_NAME"
-                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME .
-                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG_NAME
+                echo "Building Docker image with tag $DOCKER_TAG_NAME ..."
+                docker build --no-cache -t ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG .
+                docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$DOCKER_TAG
                 echo "Build and push Docker image ok ..."
