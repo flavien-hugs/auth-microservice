@@ -23,6 +23,15 @@ jobs:
                 submodules: true
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
 
+            - name: Verify pyproject.toml location
+              run: |
+                echo "Current directory: $(pwd)"
+                ls -la
+                if [ ! -f pyproject.toml ]; then
+                    echo "pyproject.toml not found in $(pwd)"
+                    exit 1
+                fi
+
             - name: Set up Python
               uses: actions/setup-python@v4
               with:
