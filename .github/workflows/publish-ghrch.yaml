@@ -20,8 +20,14 @@ jobs:
             - name: Checkout code
               uses: actions/setup-python@v4
               with:
-                submodules: true
+                submodules: recursive
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v4
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
 
             - name: Verify pyproject.toml location
               run: |
@@ -32,25 +38,20 @@ jobs:
                     exit 1
                 fi
 
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v4
-              with:
-                python-version: ${{ matrix.python-version }}
-                architecture: 'x64'
-
             - name: Install pipx and Set up Poetry
-              working-directory: /home/runner/work/auth-microservice
+              working-directory: /home/runner/work
               run: |
                 python --version
                 python -m pip install pipx
                 python -m pipx ensurepath
                 python -m pipx install poetry
+                export PATH=$PATH:/root/.local/bin
                 poetry env use python
                 poetry run pip install --upgrade pip setuptools
                 poetry install --no-root
 
             - name: Run Tests
-              working-directory: /home/runner/work/auth-microservice
+              working-directory: /home/runner/work
               run: |
                 echo "Starting tests ..."
                 poetry run pytest --cov --cov-report term --cov-report xml:coverage.xml tests
