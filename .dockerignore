@@ -13,3 +13,13 @@ Makefile
 tests/
 .venv
 dotenv/
+**/.vscode
+**/coverage
+**/.env
+**/.aws
+**/.ssh
+Dockerfile
+README.md
+docker-compose.yml
+**/venv
+**/env
