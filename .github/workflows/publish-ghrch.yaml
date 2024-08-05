@@ -3,10 +3,14 @@ name: Docker Image CI for GHRC
 on:
   push:
     branches:
-     - "main"
+      - "main"
+      - "preprod"
+      - "develop"
   pull_request:
     branches:
-     - "main"
+      - "main"
+      - "develop"
+      - "preprod"
 
 jobs:
     tests:
@@ -70,7 +74,8 @@ jobs:
             - name: Login to Docker registry
               run: |
                 echo "Logging into Docker registry..."
-                echo "${{ secrets.GHRC_PASSWORD }}" | docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
+                echo "${{ secrets.GHRC_PASSWORD }}" | \
+                    docker login ghcr.io -u ${{ secrets.GHRC_USERNAME }} --password-stdin
                 echo "Logging into Docker registry success"
 
             - name: Determine image tag and build (improved logic)
