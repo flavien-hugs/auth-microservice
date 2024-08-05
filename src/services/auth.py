@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
 from src.common.helpers.exceptions import CustomHTTException
-from src.dependences.auth import CustomAccessBearer
+from src.middlewares.auth import CustomAccessBearer
 from src.models import User
 from src.schemas import LoginUser
 from src.shared.error_codes import AuthErrorCode, UserErrorCode

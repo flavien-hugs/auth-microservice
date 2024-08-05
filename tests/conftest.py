@@ -48,7 +48,7 @@ async def clean_db(fixture_models, mock_mongodb_client):
 
 @pytest.fixture()
 def mock_authorize_bearer():
-    with mock.patch("src.routers.users.AuthorizeHTTPBearer.__call__", return_value=True):
+    with mock.patch("src.routers.users.AuthorizedHTTPBearer.__call__", return_value=True):
         yield
 
 

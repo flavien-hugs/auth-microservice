@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, Request, Security, status
 
-from src.dependences import AuthorizeHTTPBearer
+from src.middlewares import AuthorizedHTTPBearer
 from src.schemas import LoginUser
 from src.services import auth
 
@@ -13,7 +13,7 @@ async def login(payload: LoginUser = Body(...)):
 
 
 @auth_router.get(
-    "/logout", dependencies=[Security(AuthorizeHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
+    "/logout", dependencies=[Security(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
 )
 async def logout(request: Request):
     return await auth.logout(request)

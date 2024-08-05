@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.dependences import AuthorizeHTTPBearer, CheckPermissionsHandler
+from src.middlewares import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
@@ -17,8 +17,8 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 @role_router.post(
     "",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-create-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-create-role"})),
     ],
     response_model=Role,
     summary="Create role",
@@ -32,8 +32,8 @@ async def create_role(payload: RoleModel = Body(...)):
     "",
     response_model=customize_page(Role),
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
     ],
     summary="Get all roles",
     status_code=status.HTTP_200_OK,
@@ -54,8 +54,8 @@ async def listing_roles(
 @role_router.get(
     "/{id}",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
     ],
     summary="Get one roles",
     status_code=status.HTTP_200_OK,
@@ -67,8 +67,8 @@ async def ger_role(id: PydanticObjectId):
 @role_router.put(
     "/{id}",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-role", "can-update-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-update-role"})),
     ],
     summary="Update role",
     status_code=status.HTTP_200_OK,
@@ -80,8 +80,8 @@ async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
 @role_router.delete(
     "/{id}",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-role", "can-delete-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-delete-role"})),
     ],
     summary="Delete role",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -93,8 +93,8 @@ async def delete_role(id: PydanticObjectId):
 @role_router.patch(
     "/{id}/assign-permissions",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-update-role", "can-assign-permission-role"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-update-role", "can-assign-permission-role"})),
     ],
     response_model=Role,
     summary="Assign permissions to role",

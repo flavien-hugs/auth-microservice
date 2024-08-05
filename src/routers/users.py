@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.dependences import AuthorizeHTTPBearer, CheckPermissionsHandler
+from src.middlewares import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
 from src.services import roles, users
@@ -29,8 +29,8 @@ async def create_user(payload: CreateUser = Body(...)):
     "",
     response_model=customize_page(User),
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-user"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
     ],
     response_model_exclude={"password"},
     summary="Get all users",
@@ -65,8 +65,8 @@ async def listing_users(
     "/{id}",
     response_model=UserOut,
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-user"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
     ],
     response_model_exclude={"password", "is_primary"},
     summary="Get single user",
@@ -80,8 +80,8 @@ async def get_user(id: PydanticObjectId):
     "/{id}",
     response_model=User,
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-user", "can-update-user"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-update-user"})),
     ],
     response_model_exclude={"password", "is_primary"},
     summary="Update user information",
@@ -94,8 +94,8 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
 @user_router.delete(
     "/{id}",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-user", "can-delete-user"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-delete-user"})),
     ],
     summary="Delete one user",
     status_code=status.HTTP_200_OK,

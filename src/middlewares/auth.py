@@ -1,11 +1,11 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import List, Sequence
+from typing import Set
 
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
 from fastapi_jwt import JwtAccessBearer
-from jose import jwt, JWTError, ExpiredSignatureError
+from jose import ExpiredSignatureError, jwt, JWTError
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -15,7 +15,7 @@ from src.config import jwt_settings
 from src.services.roles import get_one_role
 from src.shared.error_codes import AuthErrorCode
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(format="%(message)s", level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +80,7 @@ class CustomAccessBearer:
             ) from err
 
     @classmethod
-    async def check_permissions(cls, token: str, required_permissions: Sequence = ()) -> bool:
+    async def check_permissions(cls, token: str, required_permissions: Set[str] = ()) -> bool:
         docode_token = cls.decode_access_token(token)
         user_role_id = docode_token["subject"]["role"]
 
@@ -91,7 +91,7 @@ class CustomAccessBearer:
             for perm in permissions["permissions"]:
                 user_permissions.append(perm["code"])
 
-        if not all(perm in user_permissions for perm in required_permissions):
+        if not any(perm in user_permissions for perm in required_permissions):
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
                 message_error="You do not have the necessary permissions to access this resource.",
@@ -100,7 +100,7 @@ class CustomAccessBearer:
         return True
 
 
-class AuthTokenBearer(HTTPBearer):
+class AuthorizedHTTPBearer(HTTPBearer):
     async def __call__(self, request: Request):
         if auth := await super().__call__(request=request):
             if not (auth.scheme.lower() == "bearer" and auth.scheme.startswith("Bearer")):
@@ -126,11 +126,11 @@ class CheckPermissionsHandler:
     based on the provided list of permissions.
 
     :param required_permissions: A list of strings representing the required permissions.
-    :type required_permissions: list
+    :type required_permissions: set
     """
 
-    def __init__(self, required_permissions: List[str]):
-        self.required_permissions = required_permissions
+    def __init__(self, required_permissions: Set[str]):
+        self._required_permissions = required_permissions
 
     async def __call__(self, request: Request):
         if not (authorization := request.headers.get("Authorization")):
@@ -140,4 +140,4 @@ class CheckPermissionsHandler:
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
         token = authorization.split("Bearer ")[1]
-        return await CustomAccessBearer.check_permissions(token, self.required_permissions)
+        return await CustomAccessBearer.check_permissions(token, self._required_permissions)

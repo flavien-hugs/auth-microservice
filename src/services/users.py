@@ -13,6 +13,7 @@ from src.shared.error_codes import UserErrorCode
 from src.shared.utils import password_hash
 from .roles import get_one_role
 
+logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -48,18 +49,18 @@ async def create_first_user():
 
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
-        logger.info("Role not found !")
+        logger.info("--> Role not found !")
         return
 
     if await User.find_one({"email": paylaod["email"], "is_primary": True}).exists():
-        logger.info("Admin user alreay exist !")
+        logger.info("--> Admin user alreay exist !")
         return
     else:
         password = os.getenv("DEFAULT_ADMIN_PASSWORD")
         user = User(**paylaod, role=role.id, is_primary=True)
         user.password = password_hash(password)
         await user.create()
-        logger.info("Create first user successfully !")
+        logger.info("--> Create first user successfully !")
 
 
 async def get_one_user(user_id: PydanticObjectId):
