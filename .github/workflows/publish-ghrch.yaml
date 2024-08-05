@@ -81,11 +81,20 @@ jobs:
             - name: Determine image tag and build (improved logic)
               id: build
               run: |
-                if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/master" ]]; then
+                if [[ "${{ github.ref }}" == refs/heads/* ]]; then
+                  BRANCH_NAME="${{ github.ref#refs/heads/ }}"
+                elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
+                  BRANCH_NAME="${{ github.head_ref }}"
+                else
+                  echo "No valid ref found, exiting..."
+                  exit 1
+                fi
+
+                if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
                   DOCKER_TAG_NAME="latest"
-                elif [[ "${{ github.ref }}" == "refs/heads/preprod" ]]; then
+                elif [[ "$BRANCH_NAME" == "preprod" ]]; then
                   DOCKER_TAG_NAME="preprod"
-                elif [[ "${{ github.ref }}" == "refs/heads/develop" ]]; then
+                elif [[ "$BRANCH_NAME" == "develop" ]]; then
                   DOCKER_TAG_NAME="dev"
                 else
                   echo "No valid tag found, exiting..."
