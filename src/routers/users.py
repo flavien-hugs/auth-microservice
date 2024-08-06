@@ -16,12 +16,45 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
 @user_router.post(
     "",
+    dependencies=[
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-create-user"})),
+    ],
     response_model=User,
     response_model_exclude={"password", "is_primary"},
     status_code=status.HTTP_201_CREATED,
     summary="Create new user",
 )
 async def create_user(payload: CreateUser = Body(...)):
+    """
+    Create a new user in the system.
+
+    This endpoint allows an authorized user with the `can create user` permission to create a new user.
+    The new user's details are provided in the request body.
+
+    Args:
+    - payload (CreateUser): The data required to create a new user, including username, email, and other attributes.
+
+    Returns:
+    - User: The newly created user object.
+
+    Example of use:
+
+    ```bash
+
+    curl -X POST "http://yourapi.com/users"
+    -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+    -H "Content-Type: application/json"
+    -d '{
+        "email": "newuser@example.com",
+        "fullanme": "newuser",
+        "role": "5eb7cf5a86d9755df3a6c593",
+        "attributes": {"key": "value"},
+        "password": "securepassword",
+    }'
+
+    ```
+    """
     return await users.create_user(payload)
 
 
