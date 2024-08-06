@@ -81,14 +81,16 @@ jobs:
             - name: Determine image tag and build (improved logic)
               id: build
               run: |
-                if [[ "${{ github.ref }}" == refs/heads/* ]]; then
-                  BRANCH_NAME="${{ github.ref#refs/heads/ }}"
-                elif [[ "${{ github.ref }}" == refs/pull/* ]]; then
-                  BRANCH_NAME="${{ github.head_ref }}"
+                if [[ "${{ github.event_name }}" == "push" ]]; then
+                  BRANCH_NAME="${{ github.ref_name }}"
+                elif [[ "${{ github.event_name }}" == "pull_request" ]]; then
+                  BRANCH_NAME="${{ github.base_ref }}"
                 else
-                  echo "No valid ref found, exiting..."
+                  echo "Unsupported event: ${{ github.event_name }}"
                   exit 1
                 fi
+
+                echo "Branch name: $BRANCH_NAME"
 
                 if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
                   DOCKER_TAG_NAME="latest"
@@ -97,7 +99,7 @@ jobs:
                 elif [[ "$BRANCH_NAME" == "develop" ]]; then
                   DOCKER_TAG_NAME="dev"
                 else
-                  echo "No valid tag found, exiting..."
+                  echo "No valid tag found for branch $BRANCH_NAME, exiting..."
                   exit 1
                 fi
 

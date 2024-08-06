@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Security, status
 
-from src.dependences import AuthorizeHTTPBearer, CheckPermissionsHandler
+from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 
 perm_router = APIRouter(prefix="/permissions", tags=["PERMISSIONS"], redirect_slashes=False)
 
@@ -8,8 +8,8 @@ perm_router = APIRouter(prefix="/permissions", tags=["PERMISSIONS"], redirect_sl
 @perm_router.get(
     "",
     dependencies=[
-        Security(AuthorizeHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions=["can-display-permission"])),
+        Security(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"can-display-permission"})),
     ],
     summary="Get all permissions",
     status_code=status.HTTP_200_OK,
