@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Body, Request, Security, status
+from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security, status
 
-from src.middlewares import AuthorizedHTTPBearer
-from src.schemas import LoginUser
+from src.middleware import AuthorizedHTTPBearer
+from src.schemas import ChangePassword, LoginUser, RequestChangePassword
 from src.services import auth
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
@@ -17,3 +17,17 @@ async def login(payload: LoginUser = Body(...)):
 )
 async def logout(request: Request):
     return await auth.logout(request)
+
+
+@auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+async def request_password_reset(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
+    return await auth.request_password_reset(background=background, email=payload.email)
+
+
+@auth_router.post("/reset-password-completed", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+async def reset_password_completed(
+    background: BackgroundTasks,
+    token: str = Query(..., alias="token", description="Reset password token"),
+    payload: ChangePassword = Body(...),
+):
+    return await auth.reset_password_completed(background=background, reset_passwoord_token=token, new_password=payload)

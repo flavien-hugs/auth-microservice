@@ -1,11 +1,15 @@
 import os
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, HTTPException, Request, status
+from fastapi import FastAPI
+from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import RedirectResponse
 from fastapi_pagination import add_pagination
 from slugify import slugify
+from starlette import status
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 from src.common.helpers.appdesc import load_app_description, load_permissions
 from src.common.helpers.error_codes import AppErrorCode
@@ -50,15 +54,8 @@ add_pagination(app)
 setup_exception_handlers(app)
 
 
-@app.middleware("http")
-async def add_version_header(request: Request, call_next):
-    response = await call_next(request)
-    response.headers["X-Version"] = os.environ.get("API_VERSION", "v.0.1")
-    return response
-
-
 @app.exception_handler(HTTPException)
-async def authentication_exception_handler(request: Request, exc: HTTPException):
+def authentication_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
     if exc.status_code == status.HTTP_403_FORBIDDEN:
         return JSONResponse(
             status_code=exc.status_code,
@@ -69,6 +66,13 @@ async def authentication_exception_handler(request: Request, exc: HTTPException)
                 }
             ),
         )
+
+
+@app.middleware("http")
+async def add_version_header(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Version"] = os.environ.get("API_VERSION", "v.0.1")
+    return response
 
 
 @app.get("/", include_in_schema=False)

@@ -40,24 +40,41 @@ class CustomAccessBearer:
         return cls._jwt_access_bearer
 
     @classmethod
-    def access_token(cls, data: dict, user_id: str) -> str:
+    def access_token(
+        cls,
+        data: dict,
+        user_id: str,
+        expires_delta: timedelta = timedelta(minutes=jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    ) -> str:
         access_bearer = cls._conf_jwt_access_bearer()
-        expires_delta = timedelta(minutes=jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         return access_bearer.create_access_token(subject=data, expires_delta=expires_delta, unique_identifier=user_id)
 
     @classmethod
-    def refresh_token(cls, data: dict, user_id: str) -> str:
+    def refresh_token(
+        cls,
+        data: dict,
+        user_id: str,
+        expires_delta: timedelta = timedelta(minutes=jwt_settings.REFRESH_TOKEN_EXPIRE_MINUTES),
+    ) -> str:
         access_bearer = cls._conf_jwt_access_bearer()
-        expires_delta = timedelta(minutes=jwt_settings.REFRESH_TOKEN_EXPIRE_MINUTES)
         return access_bearer.create_refresh_token(subject=data, expires_delta=expires_delta, unique_identifier=user_id)
 
     @classmethod
     def decode_access_token(cls, token: str) -> dict:
-        return jwt.decode(
-            token=token,
-            key=jwt_settings.JWT_SECRET_KEY,
-            algorithms=[jwt_settings.JWT_ALGORITHM],
-        )
+        try:
+            result = jwt.decode(
+                token=token,
+                key=jwt_settings.JWT_SECRET_KEY,
+                algorithms=[jwt_settings.JWT_ALGORITHM],
+            )
+        except (jwt.ExpiredSignatureError, JWTError) as err:
+            raise CustomHTTException(
+                code_error=AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN,
+                message_error=str(err),
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            ) from err
+
+        return result
 
     @classmethod
     async def verify_access_token(cls, token: str) -> bool:
@@ -101,6 +118,18 @@ class CustomAccessBearer:
 
 
 class AuthorizedHTTPBearer(HTTPBearer):
+    """
+    A custom HTTPBearer class that validates the Bearer authentication scheme
+    and verifies the access token.
+
+    This class extends the functionality of HTTPBearer to include additional validation checks
+    for the bearer token scheme and validity. It verifies that the token is in the correct format
+    and that it is valid for accessing the requested resource.
+
+    :param HTTPBearer: A class for handling bearer token authentication.
+    :type HTTPBearer: HTTPBearer
+    """
+
     async def __call__(self, request: Request):
         if auth := await super().__call__(request=request):
             if not (auth.scheme.lower() == "bearer" and auth.scheme.startswith("Bearer")):

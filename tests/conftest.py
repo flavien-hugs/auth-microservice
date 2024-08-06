@@ -1,6 +1,5 @@
 from unittest import mock
 
-import faker
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
@@ -12,6 +11,8 @@ from src.config import settings, jwt_settings
 
 @pytest.fixture
 def fake_data():
+    import faker
+
     return faker.Faker()
 
 
@@ -46,25 +47,29 @@ async def clean_db(fixture_models, mock_mongodb_client):
         await model.delete_all()
 
 
-@pytest.fixture()
-def mock_authorize_bearer():
-    with mock.patch("src.routers.users.AuthorizedHTTPBearer.__call__", return_value=True):
-        yield
+@pytest.fixture
+def mock_services_roles():
+    with mock.patch("src.services.roles") as mock_roles:
+        yield mock_roles
 
 
-@pytest.fixture()
-def mock_chek_permissions_handler():
-    with mock.patch("src.routers.users.CheckPermissionsHandler.__call__", return_value=True):
-        yield
+@pytest.fixture
+def mock_authorized_http_bearer():
+    with mock.patch("src.middleware.AuthorizedHTTPBearer.__call__") as mock_auth:
+        mock_auth.return_value = "mocked_access_token"
+        yield mock_auth
+
+
+@pytest.fixture
+def mock_check_permissions_handler():
+    with mock.patch("src.middleware.CheckPermissionsHandler.__call__") as mock_perm:
+        mock_perm.return_value = True
+        yield mock_perm
 
 
 @pytest.fixture(autouse=True)
 async def http_client_api(mock_app_instance, clean_db):
-    async with AsyncClient(
-        app=mock_app_instance,
-        base_url="http://auth.localhost.com",
-        follow_redirects=True,
-    ) as client:
+    async with AsyncClient(app=mock_app_instance, base_url="http://auth.localhost.com") as client:
         yield client
 
 
@@ -90,6 +95,7 @@ def fake_jwt_access_bearer():
 
 @pytest.fixture
 def mock_jwt_settings(monkeypatch):
+
     class MockJwtSettings:
         JWT_SECRET_KEY = jwt_settings.JWT_SECRET_KEY
         JWT_ALGORITHM = jwt_settings.JWT_ALGORITHM

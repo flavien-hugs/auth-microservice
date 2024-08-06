@@ -68,18 +68,3 @@ async def test_create_user_with_password_empty(http_client_api, fake_user_data):
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response_json["code_error"] == AuthErrorCode.AUTH_PASSWORD_MISMATCH
     assert response_json["message_error"] == "The password must be 6 characters or more."
-
-
-@pytest.mark.skip
-@pytest.mark.asyncio
-@pytest.mark.parametrize("sorting", ["asc", "desc"])
-async def test_get_users(
-    http_client_api, fake_user_collection, mock_authorize_bearer, mock_chek_permissions_handler, sorting
-):
-    response = await http_client_api.get(
-        "/users", params={"sorting": sorting}, headers={"Authorization": "Bearer fake_token"}
-    )
-
-    assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["total"] > 1
-    assert "items" in response.json()

@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.middlewares import AuthorizedHTTPBearer, CheckPermissionsHandler
+from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles

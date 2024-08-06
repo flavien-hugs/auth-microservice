@@ -7,7 +7,7 @@ from fastapi import Request, status
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
 
-from src.middlewares.auth import AuthorizedHTTPBearer, CheckPermissionsHandler, CustomAccessBearer, CustomHTTException
+from src.middleware.auth import AuthorizedHTTPBearer, CheckPermissionsHandler, CustomAccessBearer, CustomHTTException
 from src.shared.error_codes import AuthErrorCode
 
 
@@ -18,33 +18,33 @@ class TestCustomAccessBearer:
 
     @pytest.mark.asyncio
     def test_create_access_token(self, fake_jwt_access_bearer, fake_user_collection, mock_jwt_settings):
-        with mock.patch("src.middlewares.auth.JwtAccessBearer", fake_jwt_access_bearer):
+        with mock.patch("src.middleware.auth.JwtAccessBearer", fake_jwt_access_bearer):
             fake_jwt_access_bearer.create_access_token.return_value = "fake_access_token"
             token = self.custom_access_token.access_token(data=fake_user_collection, user_id=fake_user_collection.id)
             assert compare_digest(token, "fake_access_token")
 
     @pytest.mark.asyncio
     async def test_create_refresh_token(self, fake_jwt_access_bearer, fake_user_collection, mock_jwt_settings):
-        with mock.patch("src.middlewares.auth.JwtAccessBearer", fake_jwt_access_bearer):
+        with mock.patch("src.middleware.auth.JwtAccessBearer", fake_jwt_access_bearer):
             fake_jwt_access_bearer.create_refresh_token.return_value = "fake_refresh_token"
             token = self.custom_access_token.refresh_token(data=fake_user_collection, user_id=fake_user_collection.id)
             assert compare_digest(token, "fake_refresh_token")
 
-    @mock.patch("src.middlewares.auth.jwt.decode")
+    @mock.patch("src.middleware.auth.jwt.decode")
     def test_decode_access_token(self, mock_jwt_decode, mock_jwt_settings):
         mock_jwt_decode.return_value = {"sub": "user_id_123", "exp": datetime.now(timezone.utc).timestamp() + 600}
         decoded_token = self.custom_access_token.decode_access_token("fake_access_token")
         assert decoded_token["sub"] == "user_id_123"
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.auth.CustomAccessBearer.decode_access_token")
+    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_success(self, mock_decode_access_token, mock_jwt_settings):
         mock_decode_access_token.return_value = {"exp": datetime.now(timezone.utc).timestamp() + 600}
         result = await self.custom_access_token.verify_access_token("fake_access_token")
         assert result is True
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.auth.CustomAccessBearer.decode_access_token")
+    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_expired(self, mock_decode_access_token, mock_jwt_settings):
         mock_decode_access_token.return_value = {"exp": datetime.now(timezone.utc).timestamp() - 600}
         with pytest.raises(CustomHTTException) as exc_info:
@@ -53,7 +53,7 @@ class TestCustomAccessBearer:
         assert exc_info.value.code_error == AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.auth.CustomAccessBearer.decode_access_token")
+    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_invalid(self, mock_decode_access_token, mock_jwt_settings):
         mock_decode_access_token.side_effect = JWTError("Token is invalid")
         with pytest.raises(CustomHTTException) as exc_info:
@@ -63,7 +63,7 @@ class TestCustomAccessBearer:
 
     @pytest.mark.asyncio
     @mock.patch("src.services.users.get_one_role")
-    @mock.patch("src.middlewares.auth.CustomAccessBearer.decode_access_token")
+    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_check_permissions_success(
         self, mock_decode_access_token, mock_get_one_role, fake_user_data, fake_role_data
     ):
@@ -75,7 +75,7 @@ class TestCustomAccessBearer:
 
     @pytest.mark.asyncio
     @mock.patch("src.services.auth.get_one_role")
-    @mock.patch("src.middlewares.auth.CustomAccessBearer.decode_access_token")
+    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_check_permissions_insufficient(
         self, mock_decode_access_token, mock_get_one_role, fake_user_data, fake_role_data
     ):
@@ -95,7 +95,7 @@ class TestAuthorizeHTTPBearer:
         self.request = mock.Mock(spec=Request)
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.CustomAccessBearer.verify_access_token")
+    @mock.patch("src.middleware.CustomAccessBearer.verify_access_token")
     async def test_verify_access_token(self, mock_verify_token):
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid_token")
 
@@ -135,7 +135,7 @@ class TestCheckPermissionsHandler:
         self.request = mock.Mock(spec=Request)
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.CustomAccessBearer.check_permissions")
+    @mock.patch("src.middleware.CustomAccessBearer.check_permissions")
     async def test_valid_permissions(self, mock_check_permissions):
         mock_check_permissions.return_value = True
         self.request.headers = {"Authorization": "Bearer mocker_access_token"}
@@ -157,7 +157,7 @@ class TestCheckPermissionsHandler:
         assert excinfo.value.status_code == status.HTTP_401_UNAUTHORIZED
 
     @pytest.mark.asyncio
-    @mock.patch("src.middlewares.CustomAccessBearer.check_permissions")
+    @mock.patch("src.middleware.CustomAccessBearer.check_permissions")
     async def test_insufficient_permissions(self, mock_check_permissions):
         mock_check_permissions.side_effect = CustomHTTException(
             code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,

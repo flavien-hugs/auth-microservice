@@ -1,13 +1,18 @@
 import logging
 import smtplib
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from functools import lru_cache
 
 from pydantic import EmailStr, PositiveInt
+from starlette.background import BackgroundTasks
+
+from src.config import email_settings as env_email
 
 logger = logging.getLogger(__name__)
 
 
-class EmailSenderHandler:
+class MailServiceHandler:
     """
     A class to handle the sending of emails using SMTP.
 
@@ -24,19 +29,11 @@ class EmailSenderHandler:
 
     Methods:
     -------
-    email_sender = EmailSender(
-        email_address=email_env.EMAIL_SENDER_ADDRESS,
-        email_password=email_env.EMAIL_PASSWORD,
-        smtp_server=email_env.SMTP_SERVER,
-        smtp_port=email_env.SMTP_PORT,
-    )
+    async def send_email(receiver_email: EmailStr, subject: str, body: str):
+        Sends an email to the specified receiver.
 
-    await email_sender.send_email(
-        receiver_email="receiver@example.com",
-        subject="Sujet de l'email",
-        body="<h1>Contenu de l'email</h1>",
-        from_to=no-reply@example.com
-    )
+    def send_email_background(background_tasks: BackgroundTasks, receiver_email: EmailStr, subject: str, body: str):
+        Schedules sending an email as a background task.
 
     Sends an email to the specified receiver.
     """
@@ -47,18 +44,37 @@ class EmailSenderHandler:
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
 
-    async def send_email(self, receiver_email: EmailStr, subject: str, body: str, from_to: str):
-        message = MIMEText(_text=body, _subtype="html")
-        message["Subject"] = subject
-        message["From"] = from_to
+    async def send_email(self, receiver_email: EmailStr, subject: str, body: str):
+        message = MIMEMultipart()
+
+        message["From"] = env_email.EMAIL_FROM_TO
         message["To"] = receiver_email
+        message["Subject"] = subject
+        message.attach(MIMEText(_text=body, _subtype="html"))
 
         try:
             with smtplib.SMTP(host=self.smtp_server, port=self.smtp_port) as server:
                 server.starttls()
                 server.login(user=self.email_address, password=self.email_password)
                 server.sendmail(from_addr=self.email_address, to_addrs=[receiver_email], msg=message.as_string())
+                server.quit()
             logger.debug("Email sent successfully.")
         except Exception as exc:
             logger.debug("Email sent failed." + str(exc))
             raise
+
+    def send_email_background(
+        self, background_tasks: BackgroundTasks, receiver_email: EmailStr, subject: str, body: str
+    ):
+        background_tasks.add_task(self.send_email, receiver_email, subject, body)
+        logger.info("Email scheduled to be sent in the background.")
+
+
+@lru_cache
+def get_mail_service() -> MailServiceHandler:
+    return MailServiceHandler(
+        email_address=env_email.EMAIL_SENDER_ADDRESS,
+        email_password=env_email.EMAIL_PASSWORD,
+        smtp_server=env_email.SMTP_SERVER,
+        smtp_port=env_email.SMTP_PORT,
+    )

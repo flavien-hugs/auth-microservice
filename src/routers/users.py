@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.middlewares import AuthorizedHTTPBearer, CheckPermissionsHandler
+from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
 from src.services import roles, users
@@ -39,8 +39,10 @@ async def create_user(payload: CreateUser = Body(...)):
 async def listing_users(
     query: Optional[str] = Query(None, description="Filter by user"),
     # is_primary: bool = Query(default=False, description="Filter grant super admin"),
-    is_active: bool = Query(default=True, description="Filter account is active or disable"),
-    sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
+    is_active: bool = Query(default=True, alias="active", description="Filter account is active or disable"),
+    sorting: Optional[SortEnum] = Query(
+        SortEnum.DESC, alias="sort", description="Order by creation date: 'asc' or 'desc"
+    ),
 ):
     # search = {"is_primary": is_primary}
     search = {"is_primary": False, "is_active": is_active}

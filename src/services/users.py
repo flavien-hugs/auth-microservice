@@ -6,6 +6,7 @@ from beanie import PydanticObjectId
 from slugify import slugify
 from starlette import status
 
+from pydantic import EmailStr
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
@@ -17,25 +18,30 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def create_user(user: CreateUser) -> User:
+async def check_if_email_exist(email: EmailStr) -> bool:
+    if await User.find_one({"email": email}).exists():
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST,
+            message_error=f"User with email '{email}' already exists",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    return True
+
+
+async def create_user(user_data: CreateUser) -> User:
     """
     Créer un nouvel utilisateur
 
-    :param user: Les informations de l'utilisateur à créer
-    :type user: CreateUser
+    :param user_data: Les informations de l'utilisateur à créer
+    :type user_data: CreateUser
     :return: Le nouvel utilisateur créé
     :rtype: User
     """
-    await get_one_role(role_id=PydanticObjectId(user.role))
-    if await User.find_one({"email": user.email, "is_active": True}).exists():
-        raise CustomHTTException(
-            code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST,
-            message_error=f"User with email '{user.email.lower()}' already exists",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    await get_one_role(role_id=user_data.role)
+    await check_if_email_exist(email=user_data.email.lower())
 
-    user_data = user.model_copy(update={"password": password_hash(user.password)})
-    new_user = await User(**user_data.model_dump()).create()
+    user_data_dict = user_data.model_copy(update={"password": password_hash(user_data.password)})
+    new_user = await User(**user_data_dict.model_dump()).create()
     return new_user
 
 
