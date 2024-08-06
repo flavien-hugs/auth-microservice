@@ -14,6 +14,7 @@ def run():
         port=settings.APP_DEFAULT_PORT,
         reload=settings.APP_RELOAD,
         access_log=settings.APP_ACCESS_LOG,
+        loop="uvloop",
     )
 
 

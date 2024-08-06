@@ -1,11 +1,14 @@
 import os
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import TypedDict
 
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse
 from fastapi_pagination import add_pagination
+from httpx import AsyncClient
 from slugify import slugify
 from starlette import status
 from starlette.requests import Request
@@ -22,8 +25,12 @@ from src.services import roles, users
 BASE_URL = slugify(settings.APP_NAME)
 
 
+class State(TypedDict):
+    client: AsyncClient
+
+
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await startup_db(app=app, models=[User, Role])
 
     await load_app_description(mongodb_client=app.mongo_db_client)
