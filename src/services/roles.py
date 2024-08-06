@@ -12,6 +12,7 @@ from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
 from .perms import get_all_permissions
 
+logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -32,7 +33,7 @@ async def create_first_role():
 
     slug_value = os.getenv("DEFAULT_ADMIN_ROLE")
     if await Role.find_one({"slug": slug_value}).exists():
-        logger.info("Role is exist")
+        logger.info("--> Role is exist !")
         return
     else:
         all_permissions = await get_all_permissions()
@@ -49,7 +50,7 @@ async def create_first_role():
                 new_permissions.append({"service_info": service_info, "permissions": service_permissions})
 
         await Role(**paylaod, permissions=new_permissions).create()
-        logger.info("Create role successfully !")
+        logger.info("--> Create role successfully !")
 
 
 async def get_one_role(role_id: PydanticObjectId) -> Role:

@@ -7,6 +7,7 @@ from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 
+import pyotp
 from src.config import settings
 
 disable_installed_extensions_check()
@@ -29,3 +30,18 @@ def password_hash(password: str) -> str:
 
 def customize_page(model):
     return CustomizedPage[Page, UseParamsFields(size=settings.DEFAULT_PAGIGNIATE_PAGE_SIZE)]
+
+
+class GenerateOPTKey:
+
+    @classmethod
+    def generate_key(cls) -> str:
+        return pyotp.random_base32()
+
+    @classmethod
+    def generate_otp_instance(cls, key: str) -> pyotp.TOTP:
+        return pyotp.TOTP(key, interval=3000)
+
+    @classmethod
+    def verify_opt_code(cls, secret_otp: str, verify_otp: str) -> bool:
+        return cls.generate_otp_instance(secret_otp).verify(verify_otp)

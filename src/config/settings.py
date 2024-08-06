@@ -20,6 +20,11 @@ class AuthBaseConfig(BaseSettings):
     USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")
     ROLE_MODEL_NAME: str = Field(..., alias="ROLE_MODEL_NAME")
 
+    # FRONTEND URL CONFIG
+    FRONTEND_URL: str = Field(..., alias="FRONTEND_URL")
+    FRONTEND_PATH_RESET_PASSWORD: str = Field(..., alias="FRONTEND_PATH_RESET_PASSWORD")
+    FRONTEND_PATH_LOGIN: str = Field(..., alias="FRONTEND_PATH_LOGIN")
+
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")
     MONGODB_URI: str = Field(..., alias="MONGODB_URI")
