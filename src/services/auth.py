@@ -16,6 +16,7 @@ from src.shared import mail_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
 from .roles import get_one_role
+from .users import get_one_user
 
 template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "xml"]))
@@ -73,6 +74,29 @@ async def logout(request: Request) -> JSONResponse:
     }
 
     return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(response_data))
+
+
+async def change_password(user_id: PydanticObjectId, change_password: ChangePassword):
+    user = await get_one_user(user_id=user_id)
+
+    password = password_hash(password=change_password.confirm_password)
+    await user.set({"password": password_hash(password=password)})
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder({"message": "Your password has been successfully updated !"}),
+    )
+
+
+async def check_access(token: str, permission: set[str]):
+    access = await CustomAccessBearer.check_permissions(token=token, required_permissions=permission)
+    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"access": access}))
+
+
+async def check_validate_access_token(token: str):
+    is_token_active = await CustomAccessBearer.verify_access_token(token=token)
+    result = is_token_active if isinstance(is_token_active, bool) else False
+    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"token_is_active": result}))
 
 
 async def request_password_reset(background: BackgroundTasks, email: EmailStr) -> JSONResponse:
