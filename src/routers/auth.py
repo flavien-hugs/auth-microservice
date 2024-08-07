@@ -1,3 +1,6 @@
+from typing import Set
+
+from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security, status
 
 from src.middleware import AuthorizedHTTPBearer
@@ -17,6 +20,32 @@ async def login(payload: LoginUser = Body(...)):
 )
 async def logout(request: Request):
     return await auth.logout(request)
+
+
+@auth_router.get(
+    "/check-access",
+    summary="Check user access",
+    status_code=status.HTTP_200_OK,
+)
+async def check_access(
+    token: str = Security(AuthorizedHTTPBearer),
+    permission: Set[str] = Query(..., title="Permission to check"),
+):
+    return await auth.check_access(token=token, permission=permission)
+
+
+@auth_router.post(
+    "/check-validate-access-token",
+    summary="Check validate access token",
+    status_code=status.HTTP_200_OK,
+)
+async def check_validate_access_token(token: str):
+    return await auth.check_validate_access_token(token=token)
+
+
+@auth_router.put("/change-password/{id}", summary="Set up a password for the user.", status_code=status.HTTP_200_OK)
+async def change_password(id: str, payload: ChangePassword = Body(...)):
+    return await auth.change_password(user_id=PydanticObjectId(id), change_password=payload)
 
 
 @auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
