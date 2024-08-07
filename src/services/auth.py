@@ -96,7 +96,7 @@ async def check_access(token: str, permission: set[str]):
 async def check_validate_access_token(token: str):
     is_token_active = await CustomAccessBearer.verify_access_token(token=token)
     result = is_token_active if isinstance(is_token_active, bool) else False
-    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"token_is_active": result}))
+    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"active": result}))
 
 
 async def request_password_reset(background: BackgroundTasks, email: EmailStr) -> JSONResponse:

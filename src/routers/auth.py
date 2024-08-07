@@ -34,7 +34,7 @@ async def check_access(
     return await auth.check_access(token=token, permission=permission)
 
 
-@auth_router.post(
+@auth_router.get(
     "/check-validate-access-token",
     summary="Check validate access token",
     status_code=status.HTTP_200_OK,
