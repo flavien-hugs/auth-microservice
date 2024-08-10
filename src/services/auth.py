@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 from beanie import PydanticObjectId
 from fastapi import BackgroundTasks, Request, status
@@ -93,10 +93,14 @@ async def check_access(token: str, permission: set[str]):
     return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"access": access}))
 
 
-async def check_validate_access_token(token: str):
-    is_token_active = await CustomAccessBearer.verify_access_token(token=token)
-    result = is_token_active if isinstance(is_token_active, bool) else False
-    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder({"active": result}))
+async def validate_access_token(token: str):
+    decode_token = await CustomAccessBearer.decode_access_token(token=token)
+    current_timestamp = datetime.now(timezone.utc).timestamp()
+    is_token_active = decode_token.get("exp", 0) > current_timestamp
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content=jsonable_encoder({"active": bool(is_token_active), "user_info": decode_token.get("subject", {})}),
+    )
 
 
 async def request_password_reset(background: BackgroundTasks, email: EmailStr) -> JSONResponse:
