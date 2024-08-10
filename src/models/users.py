@@ -1,7 +1,7 @@
 from typing import Any, Dict
 
 from beanie import Document
-from pydantic import field_validator, StrictBool, Field
+from pydantic import field_validator, StrictBool
 from slugify import slugify
 
 from src.config import settings
@@ -11,7 +11,7 @@ from .mixins import DatetimeTimestamp
 
 class User(CreateUser, DatetimeTimestamp, Document):
     is_active: StrictBool = True
-    is_primary: StrictBool = Field(repr=False, frozen=True)
+    is_primary: StrictBool = False
 
     class Settings:
         name = settings.USER_MODEL_NAME
