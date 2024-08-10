@@ -65,7 +65,6 @@ async def create_user(payload: CreateUser = Body(...)):
         Security(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
     ],
-    response_model_exclude={"password"},
     summary="Get all users",
     status_code=status.HTTP_200_OK,
 )

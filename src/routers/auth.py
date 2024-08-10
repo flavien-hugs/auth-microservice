@@ -40,7 +40,7 @@ async def check_access(
     status_code=status.HTTP_200_OK,
 )
 async def check_validate_access_token(token: str):
-    return await auth.check_validate_access_token(token=token)
+    return await auth.validate_access_token(token=token)
 
 
 @auth_router.put("/change-password/{id}", summary="Set up a password for the user.", status_code=status.HTTP_200_OK)
