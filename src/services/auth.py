@@ -94,7 +94,7 @@ async def check_access(token: str, permission: set[str]):
 
 
 async def validate_access_token(token: str):
-    decode_token = await CustomAccessBearer.decode_access_token(token=token)
+    decode_token = CustomAccessBearer.decode_access_token(token=token)
     current_timestamp = datetime.now(timezone.utc).timestamp()
     is_token_active = decode_token.get("exp", 0) > current_timestamp
     return JSONResponse(
