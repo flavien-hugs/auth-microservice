@@ -21,6 +21,7 @@ from src.config import settings, shutdown_db, startup_db
 from src.models import Role, User
 from src.routers import auth_router, perm_router, role_router, user_router
 from src.services import roles, users
+from src.shared import blacklist_token
 
 BASE_URL = slugify(settings.APP_NAME)
 
@@ -38,6 +39,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     await roles.create_first_role()
     await users.create_first_user()
+
+    blacklist_token.init_blacklist_token_file()
 
     yield
     await shutdown_db(app=app)

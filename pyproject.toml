@@ -67,7 +67,7 @@ exclude = '''
 '''
 
 [tool.pytest.ini_options]
-env_files = 'tests/test.env'
+env_files = 'tests/.test.env'
 env_override_existing_values = 1
 capture = "no"
 log-cli-level = "INFO"

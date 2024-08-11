@@ -29,6 +29,7 @@ jobs:
               with:
                 submodules: recursive
                 token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+                fetch-depth: 0
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v3
