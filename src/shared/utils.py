@@ -71,7 +71,7 @@ class TokenBlacklistHandler:
 
     async def add_blacklist_token(self, token: str) -> bool:
         try:
-            with open(file=self._token_file, mode="a", encoding='utf_8') as file:
+            with open(file=self._token_file, mode="a", encoding="utf-8") as file:
                 file.write(f"{token},")
                 logger.info("Adding token to blacklist file !")
         except IOError as e:
@@ -80,7 +80,7 @@ class TokenBlacklistHandler:
 
     async def is_token_blacklisted(self, token: str) -> bool:
         try:
-            with open(file=self._token_file, mode="r") as file:
+            with open(file=self._token_file, encoding="utf-8") as file:
                 content = file.read()
                 tokens = content.rstrip(",").split(",")
                 logger.info("The token already exists in the blacklist !")
