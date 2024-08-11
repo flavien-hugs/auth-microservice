@@ -12,7 +12,7 @@ from src.config import settings
 from src.middleware.auth import CustomAccessBearer
 from src.models import User
 from src.schemas import ChangePassword, LoginUser
-from src.shared import mail_service
+from src.shared import mail_service, blacklist_token
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
 from .roles import get_one_role
@@ -57,7 +57,10 @@ async def login(payload: LoginUser) -> JSONResponse:
 
 
 async def logout(request: Request) -> JSONResponse:
+
     authorization = request.headers.get("Authorization").split()[1]
+    await blacklist_token.add_blacklist_token(authorization)
+
     decode_token = CustomAccessBearer.decode_access_token(authorization)
 
     data = decode_token["subject"]
