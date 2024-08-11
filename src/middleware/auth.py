@@ -14,6 +14,7 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings
 from src.services.roles import get_one_role
 from src.shared.error_codes import AuthErrorCode
+from src.shared import blacklist_token
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -79,6 +80,12 @@ class CustomAccessBearer:
     @classmethod
     async def verify_access_token(cls, token: str) -> bool:
         try:
+            if await blacklist_token.is_token_blacklisted(token):
+                raise CustomHTTException(
+                    code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,
+                    message_error="Token has expired !",
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                )
             decode_token = cls.decode_access_token(token)
             current_timestamp = datetime.now(timezone.utc).timestamp()
 
