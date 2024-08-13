@@ -22,8 +22,9 @@ class AuthBaseConfig(BaseSettings):
 
     # FRONTEND URL CONFIG
     FRONTEND_URL: str = Field(..., alias="FRONTEND_URL")
-    FRONTEND_PATH_RESET_PASSWORD: str = Field(..., alias="FRONTEND_PATH_RESET_PASSWORD")
     FRONTEND_PATH_LOGIN: str = Field(..., alias="FRONTEND_PATH_LOGIN")
+    FRONTEND_PATH_RESET_PASSWORD: str = Field(..., alias="FRONTEND_PATH_RESET_PASSWORD")
+    FRONTEND_PATH_ACTIVATE_ACCOUNT: str = Field(..., alias="FRONTEND_PATH_ACTIVATE_ACCOUNT")
 
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")

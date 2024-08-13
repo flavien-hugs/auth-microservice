@@ -59,12 +59,13 @@ class TokenBlacklistHandler:
         self._token_file = os.getenv("BLACKLIST_TOKEN_FILE")
         if not self._token_file:
             raise ValueError("Blacklist file does not exist !")
-        self.init_blacklist_token_file()
+        else:
+            self.init_blacklist_token_file()
 
     def init_blacklist_token_file(self) -> bool:
         try:
             open(file=self._token_file, mode="a").close()
-            logger.info("Initialising the token blacklist file !")
+            logger.info("--> Initialising the token blacklist file !")
         except IOError as e:
             raise IOError(f"Error when initialising the token blacklist file: {e}") from e
         return True
@@ -73,7 +74,7 @@ class TokenBlacklistHandler:
         try:
             with open(file=self._token_file, mode="a", encoding="utf-8") as file:
                 file.write(f"{token},")
-                logger.info("Adding token to blacklist file !")
+                logger.info("--> Adding token to blacklist file !")
         except IOError as e:
             raise IOError(f"Error when adding token to blacklist: {e}") from e
         return True
@@ -83,7 +84,7 @@ class TokenBlacklistHandler:
             with open(file=self._token_file, encoding="utf-8") as file:
                 content = file.read()
                 tokens = content.rstrip(",").split(",")
-                logger.info("The token already exists in the blacklist !")
+                logger.info("--> The token already exists in the blacklist !")
         except IOError as e:
             raise IOError(f"Error verifying token in black list: {e}") from e
 

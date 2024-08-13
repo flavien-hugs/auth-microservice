@@ -57,20 +57,26 @@
     </head>
     <body>
         <section class="container">
-            <h3>Hello, </h3>
-            <p>Your password has been reset successfully.</p>
+            <h3>You welcome, </h3>
+            <p>
+                We are thrilled to have you join us! Your [Service Name] account has been successfully created,
+                and you're now ready to explore all the features and benefits we offer.
+            </p>
 
-            <p>Please click on the link below to log in: </p>
+            <p>To get started, you can log in to your account by clicking the link below:</p>
             <p style="text-align: center;">
-                <a class="button" href="{{ login_link }}">Log in</a>
+                <a class="button" href="{{ activate_link }}">
+                    Access my account
+                </a>
             </p>
 
             <p>
-                If the link below does not work, please copy and paste the URL into a new browser window.
+                If you have any questions or need assistance, our team is here to help.
+                Please don't hesitate to reach out to us at any time.
             </p>
+            <p>Thank you for being a part of our community !</p><br>
 
-            <pre class="code-block"><code><a href="{{ login_link }}">{{ login_link }}</a></code></pre>
-
+            <p>See you soon,</p>
             <p>The {{ service_name }} Team.</p>
         </section>
     </body>

@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="fr">
     <head>
-        <title></title>
         <meta charset="UTF-8">
+        <title></title>
          <style>
             body {
                 font-family: Arial, sans-serif;
@@ -58,18 +58,31 @@
     <body>
         <section class="container">
             <h3>Hello, </h3>
-            <p>Your password has been reset successfully.</p>
+            <p>Please confirm your e-mail address to activate your account</p>
 
-            <p>Please click on the link below to log in: </p>
+            <p>
+                Thank you for registering with {{ staff }}.
+                To finalise the creation of your account, please confirm your e-mail address by clicking
+                on the link below:
+            </p>
             <p style="text-align: center;">
-                <a class="button" href="{{ login_link }}">Log in</a>
+                <a class="button" href="{{ activate_link }}">
+                    Confirm e-mail address
+                </a>
             </p>
 
             <p>
-                If the link below does not work, please copy and paste the URL into a new browser window.
+                If the link doesn't work, you can copy and paste the following URL into your browser:
             </p>
 
-            <pre class="code-block"><code><a href="{{ login_link }}">{{ login_link }}</a></code></pre>
+            <pre class="code-block"><code><a href="{{ activate_link }}">{{ activate_link }}</a></code></pre>
+
+            <p>
+                This confirmation link is valid for {{ link_validity }} minutes.
+                If you have not requested the creation of this account, please ignore this e-mail.
+            </p><br>
+
+            <p>Thank you for your interest,</p>
 
             <p>The {{ service_name }} Team.</p>
         </section>
