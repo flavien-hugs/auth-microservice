@@ -2,7 +2,6 @@ import logging
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from functools import lru_cache
 
 from pydantic import EmailStr, PositiveInt
 from starlette.background import BackgroundTasks
@@ -44,7 +43,7 @@ class MailServiceHandler:
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
 
-    async def send_email(self, receiver_email: EmailStr, subject: str, body: str):
+    async def send_email(self, receiver_email: list[EmailStr], subject: str, body: str):
         message = MIMEMultipart()
 
         message["From"] = env_email.EMAIL_FROM_TO
@@ -56,22 +55,21 @@ class MailServiceHandler:
             with smtplib.SMTP(host=self.smtp_server, port=self.smtp_port) as server:
                 server.starttls()
                 server.login(user=self.email_address, password=self.email_password)
-                server.sendmail(from_addr=self.email_address, to_addrs=[receiver_email], msg=message.as_string())
+                server.sendmail(from_addr=self.email_address, to_addrs=receiver_email, msg=message.as_string())
                 server.quit()
-            logger.debug("Email sent successfully.")
+            logger.debug("--> Email sent successfully.")
         except Exception as exc:
-            logger.debug("Email sent failed." + str(exc))
+            logger.debug("--> Email sent failed." + str(exc))
             raise
 
     def send_email_background(
-        self, background_tasks: BackgroundTasks, receiver_email: EmailStr, subject: str, body: str
+        self, background_tasks: BackgroundTasks, receiver_email: list[EmailStr], subject: str, body: str
     ):
         background_tasks.add_task(self.send_email, receiver_email, subject, body)
         logger.info("Email scheduled to be sent in the background.")
 
 
-@lru_cache
-def get_mail_service() -> MailServiceHandler:
+def email_sender_handler() -> MailServiceHandler:
     return MailServiceHandler(
         email_address=env_email.EMAIL_SENDER_ADDRESS,
         email_password=env_email.EMAIL_PASSWORD,

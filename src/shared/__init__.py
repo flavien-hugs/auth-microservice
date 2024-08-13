@@ -1,7 +1,7 @@
-from .send_email import get_mail_service  # noqa: F401
+from .send_email import email_sender_handler  # noqa: F401
 from .utils import TokenBlacklistHandler
 
-mail_service = get_mail_service()
+mail_service = email_sender_handler()
 blacklist_token = TokenBlacklistHandler()
 
 __all__ = ["mail_service", "blacklist_token"]

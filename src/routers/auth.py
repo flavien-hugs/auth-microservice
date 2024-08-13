@@ -1,11 +1,15 @@
 from typing import Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security, status
+from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security
+from starlette import status
 
 from src.middleware import AuthorizedHTTPBearer
-from src.schemas import ChangePassword, LoginUser, RequestChangePassword
+from src.models import User
+from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema
 from src.services import auth
+from src.config import include_in_swagger
+
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
 
@@ -60,3 +64,29 @@ async def reset_password_completed(
     payload: ChangePassword = Body(...),
 ):
     return await auth.reset_password_completed(background=background, reset_passwoord_token=token, new_password=payload)
+
+
+if bool(include_in_swagger.SHOW_REQUEST_CREATE_ACCOUNT):
+
+    @auth_router.post(
+        "/request-create-account",
+        status_code=status.HTTP_201_CREATED,
+        summary="Request create account",
+        description="Request create account and receive e-mail to active account.",
+    )
+    async def request_create_account(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
+        return await auth.request_create_account_with_send_email(background=background, email=payload.email)
+
+
+if bool(include_in_swagger.SHOW_CREATE_NEW_ACCOUNT):
+
+    @auth_router.post(
+        "/create-new-account",
+        response_model=User,
+        response_model_exclude={"password"},
+        status_code=status.HTTP_200_OK,
+        summary="Create new account",
+        description="Create new account and receive e-mail to active account.",
+    )
+    async def create_new_account(token: str, background: BackgroundTasks, payload: UserBaseSchema = Body(...)):
+        return await auth.create_new_account_with_send_email(token=token, user_data=payload, background=background)
