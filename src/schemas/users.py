@@ -10,19 +10,11 @@ from src.config import settings
 from src.shared.error_codes import AuthErrorCode
 
 
-class CreateUser(BaseModel):
-    email: Indexed(EmailStr, pymongo.TEXT)
+class UserBaseSchema(BaseModel):
     fullname: Optional[StrictStr] = Field(..., examples=["John Doe"])
     role: Optional[PydanticObjectId] = Field(..., description="User role")
     attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
     password: str = Field(default=None, examples=["p@55word"])
-
-    @classmethod
-    @field_validator("email", mode="after")
-    def lowercase_email(cls, value) -> str:
-        if value:
-            return value.lower()
-        return value
 
     @field_validator("password", mode="before")
     def validate_password_length(cls, value):  # noqa: B902
@@ -33,6 +25,17 @@ class CreateUser(BaseModel):
             message_error="The password must be 6 characters or more.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+
+class CreateUser(UserBaseSchema):
+    email: Indexed(EmailStr, pymongo.TEXT)
+
+    @classmethod
+    @field_validator("email", mode="after")
+    def lowercase_email(cls, value) -> str:
+        if value:
+            return value.lower()
+        return value
 
 
 class UpdateUser(BaseModel):

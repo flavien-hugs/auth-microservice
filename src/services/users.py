@@ -3,10 +3,11 @@ import os
 from typing import Sequence
 
 from beanie import PydanticObjectId
-from slugify import slugify
-from starlette import status
-
+from fastapi import status
+from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
+from slugify import slugify
+
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
@@ -16,6 +17,9 @@ from .roles import get_one_role
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+template_loader = PackageLoader("src", "templates")
+template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
 
 
 async def check_if_email_exist(email: EmailStr) -> bool:
@@ -46,11 +50,6 @@ async def create_user(user_data: CreateUser) -> User:
 
 
 async def create_first_user():
-    """
-    Create first user
-    :return:
-    :rtype:
-    """
     paylaod = {"email": os.getenv("DEFAULT_ADMIN_EMAIL"), "fullname": os.getenv("DEFAULT_ADMIN_FULLNAME")}
 
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")

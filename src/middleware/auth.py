@@ -44,7 +44,7 @@ class CustomAccessBearer:
     def access_token(
         cls,
         data: dict,
-        user_id: str,
+        user_id: str = None,
         expires_delta: timedelta = timedelta(minutes=jwt_settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     ) -> str:
         access_bearer = cls._conf_jwt_access_bearer()
