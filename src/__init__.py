@@ -47,6 +47,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 app: FastAPI = FastAPI(
+    debug=True,
     lifespan=lifespan,
     title=f"{settings.APP_NAME.upper()} API Service",
     summary=f"{settings.APP_TITLE}",
