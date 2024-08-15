@@ -1,16 +1,18 @@
 import logging
 import os
-from typing import Sequence, Set
+from typing import Sequence, Set, Optional
 
 from beanie import PydanticObjectId
 from slugify import slugify
 from starlette import status
-
+from pymongo import ASCENDING, DESCENDING
 from src.common.helpers.exceptions import CustomHTTException
-from src.models import Role
+from src.models import Role, User
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
 from .perms import get_all_permissions
+from src.shared.utils import SortEnum
+from fastapi_pagination import paginate
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -75,6 +77,15 @@ async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role
     result = await role.set(
         {**update_role.model_dump(exclude_none=True, exclude_unset=True), "slug": slugify(update_role.name)}
     )
+    return result
+
+
+async def get_roles_members(role_id: PydanticObjectId, sorting: Optional[SortEnum] = SortEnum.DESC):
+    role = await get_one_role(role_id=role_id)
+    sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
+    users = await User.find({"role": PydanticObjectId(role.id)}, sort=[("created_at", sorted)]).to_list()
+    users_list = [{**user.model_dump(by_alias=True, exclude={"password", "is_primary"})} for user in users]
+    result = paginate(users_list, additional_data={"role_info": role})
     return result
 
 

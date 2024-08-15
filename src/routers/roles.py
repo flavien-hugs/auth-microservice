@@ -2,7 +2,7 @@ from typing import Optional, Set
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, Depends, Query, Security, status
-from fastapi_pagination import paginate
+from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
@@ -10,6 +10,8 @@ from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
 from src.shared.utils import customize_page, SortEnum
+from src.config import enable_endpoint
+
 
 role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 
@@ -47,8 +49,8 @@ async def listing_roles(
         search["$text"] = {"$search": query}
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
-    roles = await Role.find(search).sort([("created_at", sorted)]).to_list()
-    return paginate(roles)
+    roles = Role.find(search, sort=[("created_at", sorted)])
+    return await paginate(roles)
 
 
 @role_router.get(
@@ -88,6 +90,25 @@ async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
 )
 async def delete_role(id: PydanticObjectId):
     return await roles.delete_role(role_id=PydanticObjectId(id))
+
+
+if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
+
+    @role_router.get(
+        "/{id}/members",
+        dependencies=[
+            Security(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-display-user"})),
+        ],
+        response_model=customize_page(dict),
+        summary="Get role members",
+        status_code=status.HTTP_200_OK,
+    )
+    async def get_role_members(
+        id: PydanticObjectId,
+        sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
+    ):
+        return await roles.get_roles_members(role_id=PydanticObjectId(id), sorting=sorting)
 
 
 @role_router.patch(

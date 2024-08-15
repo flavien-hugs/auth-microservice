@@ -3,9 +3,11 @@ import logging
 from enum import StrEnum
 from secrets import compare_digest
 
+from typing import TypeVar
+
 import pyotp
 from fastapi_pagination import Page
-from fastapi_pagination.customization import CustomizedPage, UseParamsFields
+from fastapi_pagination.customization import CustomizedPage, UseParamsFields, UseName
 from fastapi_pagination.utils import disable_installed_extensions_check
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
@@ -19,6 +21,9 @@ password_context = PasswordHash((Argon2Hasher(), BcryptHasher()))
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+T = TypeVar("T")
 
 
 class SortEnum(StrEnum):
@@ -35,7 +40,7 @@ def password_hash(password: str) -> str:
 
 
 def customize_page(model):
-    return CustomizedPage[Page, UseParamsFields(size=settings.DEFAULT_PAGIGNIATE_PAGE_SIZE)]
+    return CustomizedPage[Page[T], UseName("CustomPage"), UseParamsFields(size=settings.DEFAULT_PAGIGNIATE_PAGE_SIZE)]
 
 
 class GenerateOPTKey:
@@ -63,11 +68,13 @@ class TokenBlacklistHandler:
             self.init_blacklist_token_file()
 
     def init_blacklist_token_file(self) -> bool:
-        try:
-            open(file=self._token_file, mode="a").close()
-            logger.info("--> Initialising the token blacklist file !")
-        except IOError as e:
-            raise IOError(f"Error when initialising the token blacklist file: {e}") from e
+        if not os.path.exists(self._token_file):
+            try:
+                open(file=self._token_file, mode="a").close()
+                logger.info("--> Initialising the token blacklist file !")
+            except IOError as e:
+                raise IOError(f"Error when initialising the token blacklist file: {e}") from e
+        logger.info("--> Token blacklist file already exist !")
         return True
 
     async def add_blacklist_token(self, token: str) -> bool:

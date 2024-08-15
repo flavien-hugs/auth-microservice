@@ -83,7 +83,7 @@ async def get_one_user(user_id: PydanticObjectId):
         )
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
-    return user.model_copy(update={"extras": {"role_info": role.model_dump()}}, deep=True)
+    return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}}, deep=True)
 
 
 async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
@@ -96,12 +96,13 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
     :return:
     :rtype:
     """
-    await get_one_role(role_id=PydanticObjectId(update_user.role))
+    if update_user.role:
+        await get_one_role(role_id=PydanticObjectId(update_user.role))
     user = await get_one_user(user_id=user_id)
-    result = await user.set({**update_user.model_dump(exclude_none=True, exclude_unset=True)})
+    await user.set({**update_user.model_dump(exclude_none=True, exclude_unset=True)})
 
-    role = await get_one_role(role_id=PydanticObjectId(result.role))
-    return user.model_copy(update={"extras": {"role_info": role.model_dump()}}, deep=True)
+    role = await get_one_role(role_id=PydanticObjectId(user.role))
+    return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
 
 
 async def delete_user(user_id: PydanticObjectId) -> None:

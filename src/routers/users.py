@@ -87,7 +87,7 @@ async def listing_users(
     return paginate(
         [
             {
-                **user.model_dump(exclude={"password", "is_primary"}),
+                **user.model_dump(by_alias=True, exclude={"password", "is_primary"}),
                 "extra": {"role_info": await roles.get_one_role(role_id=PydanticObjectId(user.role))},
             }
             for user in users
