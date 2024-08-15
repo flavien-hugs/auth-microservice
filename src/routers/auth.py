@@ -8,7 +8,7 @@ from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema
 from src.services import auth
-from src.config import include_in_swagger
+from src.config import enable_endpoint
 
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
@@ -66,7 +66,7 @@ async def reset_password_completed(
     return await auth.reset_password_completed(background=background, reset_passwoord_token=token, new_password=payload)
 
 
-if bool(include_in_swagger.SHOW_REQUEST_CREATE_ACCOUNT):
+if bool(enable_endpoint.SHOW_REQUEST_CREATE_ACCOUNT_ENDPOINT):
 
     @auth_router.post(
         "/request-create-account",
@@ -78,7 +78,7 @@ if bool(include_in_swagger.SHOW_REQUEST_CREATE_ACCOUNT):
         return await auth.request_create_account_with_send_email(background=background, email=payload.email)
 
 
-if bool(include_in_swagger.SHOW_CREATE_NEW_ACCOUNT):
+if bool(enable_endpoint.SHOW_CREATE_NEW_ACCOUNT_ENDPOINT):
 
     @auth_router.post(
         "/create-new-account",

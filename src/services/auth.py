@@ -46,14 +46,14 @@ async def login(payload: LoginUser) -> JSONResponse:
         )
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
-    user_data = user.model_dump(exclude={"password", "attributes", "is_primary"})
+    user_data = user.model_dump(by_alias=True, exclude={"password", "attributes", "is_primary"})
 
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-    response_data["user"]["role"] = role.model_dump()
+    response_data["user"]["role"] = role.model_dump(by_alias=True)
     return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
 
