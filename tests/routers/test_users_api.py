@@ -1,15 +1,13 @@
 import pytest
 from starlette import status
 
-from src.config import settings
-
 
 # fake = faker.Faker()
 
 
 @pytest.mark.asyncio
 async def test_ping_api(http_client_api):
-    response = await http_client_api.get(f"/{settings.APP_NAME}/@ping")
+    response = await http_client_api.get("/@ping")
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json() == {"message": "pong !"}
 
