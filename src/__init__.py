@@ -49,10 +49,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 app: FastAPI = FastAPI(
     debug=True,
     lifespan=lifespan,
-    title=f"{settings.APP_NAME.upper()} API Service",
-    summary=f"{settings.APP_TITLE}",
-    docs_url=f"/{BASE_URL}/docs",
-    openapi_url=f"/{BASE_URL}/openapi.json",
+    title=f"U. INC: {settings.APP_NAME.upper()} API Service",
+    description=f"{settings.APP_TITLE}",
+    docs_url="/docs",
+    openapi_url="/openapi.json",
+    redirect_slashes=False,
     root_path_in_servers=False,
 )
 
@@ -88,9 +89,9 @@ async def add_version_header(request: Request, call_next):
 
 @app.get("/", include_in_schema=False)
 async def read_root():
-    return RedirectResponse(url=f"/{BASE_URL}/docs")
+    return RedirectResponse(url="/docs")
 
 
-@app.get(f"/{BASE_URL}/@ping", tags=["DEFAULT"], summary="Check if server is available")
+@app.get("/@ping", tags=["DEFAULT"], summary="Check if server is available")
 async def ping():
     return {"message": "pong !"}

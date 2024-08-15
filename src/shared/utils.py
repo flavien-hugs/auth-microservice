@@ -1,19 +1,16 @@
-import os
 import logging
+import os
 from enum import StrEnum
 from secrets import compare_digest
-
 from typing import TypeVar
 
 import pyotp
 from fastapi_pagination import Page
-from fastapi_pagination.customization import CustomizedPage, UseParamsFields, UseName
+from fastapi_pagination.customization import CustomizedPage, UseName, UseOptionalParams
 from fastapi_pagination.utils import disable_installed_extensions_check
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
-
-from src.config import settings
 
 disable_installed_extensions_check()
 
@@ -40,7 +37,7 @@ def password_hash(password: str) -> str:
 
 
 def customize_page(model):
-    return CustomizedPage[Page[T], UseName("CustomPage"), UseParamsFields(size=settings.DEFAULT_PAGIGNIATE_PAGE_SIZE)]
+    return CustomizedPage[Page[T], UseName("CustomPage"), UseOptionalParams()]
 
 
 class GenerateOPTKey:

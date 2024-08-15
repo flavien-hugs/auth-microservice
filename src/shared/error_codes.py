@@ -18,7 +18,7 @@ class UserErrorCode(StrEnum):
     USER_ACCOUND_DESABLE = "users/account-disabled"
     USER_CREATE_FAILED = "users/create-user-failed"
     USER_UPDATE_INFO_FAILED = "users/update-user-failed"
-    USER_EMAIL_ALREADY_EXIST = "users/email-alreary-exist"
+    USER_EMAIL_ALREADY_EXIST = "users/email-already-exist"
     FIRST_USER_ALREADY_EXIST = "users/first-user-alreary-exist"
 
 
@@ -26,4 +26,4 @@ class RoleErrorCode(StrEnum):
     ROLE_NOT_FOUND = "roles/role-not-found"
     ROLE_CREATE_FAILED = "roles/create-role-failed"
     ROLE_UPDATE_INFO_FAILED = "roles/update-role-failed"
-    ROLE_ALREADY_EXIST = "roles/role-alreary-exist"
+    ROLE_ALREADY_EXIST = "roles/role-already-exist"
