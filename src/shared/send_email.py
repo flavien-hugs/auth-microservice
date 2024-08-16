@@ -63,9 +63,9 @@ class MailServiceHandler:
             raise
 
     def send_email_background(
-        self, background_tasks: BackgroundTasks, receiver_email: list[EmailStr], subject: str, body: str
+        self, background_task: BackgroundTasks, receiver_email: list[EmailStr], subject: str, body: str
     ):
-        background_tasks.add_task(self.send_email, receiver_email, subject, body)
+        background_task.add_task(self.send_email, receiver_email, subject, body)
         logger.info("Email scheduled to be sent in the background.")
 
 
