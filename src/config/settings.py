@@ -14,6 +14,7 @@ class AuthBaseConfig(BaseSettings):
     APP_ACCESS_LOG: bool = Field(default=True, alias="APP_ACCESS_LOG")
     APP_DEFAULT_PORT: PositiveInt = Field(default=9077, alias="APP_DEFAULT_PORT")
     PASSWORD_MIN_LENGTH: PositiveInt = Field(default=6, alias="PASSWORD_MIN_LENGTH")
+    ENABLE_OTP_CODE: bool = Field(default=True, alias="ENABLE_OTP_CODE")
 
     # USER MODEL NAME
     USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")

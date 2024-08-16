@@ -23,7 +23,7 @@ template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
 
 
-async def login(payload: LoginUser) -> JSONResponse:
+async def login(background: BackgroundTasks, payload: LoginUser) -> JSONResponse:
     if (user := await User.find_one({"email": payload.email.lower()})) is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
@@ -130,7 +130,7 @@ async def request_password_reset(background: BackgroundTasks, email: EmailStr) -
     )
 
     mail_service.send_email_background(
-        background_tasks=background,
+        background_task=background,
         receiver_email=user.email.lower(),
         subject=f"{email_settings.SMTP_APP_NAME}: Reset your password",
         body=rendered_html,
@@ -166,7 +166,7 @@ async def reset_password_completed(
     rendered_html = template.render(login_link=login_link, service_name=email_settings.SMTP_APP_NAME)
 
     mail_service.send_email_background(
-        background_tasks=background,
+        background_task=background,
         receiver_email=user.email.lower(),
         subject=f"{email_settings.SMTP_APP_NAME}: Password reset completed",
         body=rendered_html,
@@ -198,7 +198,7 @@ async def request_create_account_with_send_email(background: BackgroundTasks, em
     )
 
     mail_service.send_email_background(
-        background_tasks=background,
+        background_task=background,
         receiver_email=email.lower(),
         subject=f"{email_settings.SMTP_APP_NAME}: Please confirm your e-mail address to activate your account",
         body=rendered_html,
@@ -231,7 +231,7 @@ async def create_new_account_with_send_email(
     rendered_html = template.render(service_name=email_settings.SMTP_APP_NAME, login_link=settings.FRONTEND_PATH_LOGIN)
 
     mail_service.send_email_background(
-        background_tasks=background,
+        background_task=background,
         receiver_email=addr_email.lower(),
         subject=f"{email_settings.SMTP_APP_NAME}: You welcome",
         body=rendered_html,
