@@ -23,7 +23,7 @@ template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
 
 
-async def login(background: BackgroundTasks, payload: LoginUser) -> JSONResponse:
+async def login(payload: LoginUser) -> JSONResponse:
     if (user := await User.find_one({"email": payload.email.lower()})) is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
