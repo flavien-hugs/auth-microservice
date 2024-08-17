@@ -13,6 +13,7 @@ from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
 from src.shared.error_codes import UserErrorCode
 from src.shared.utils import password_hash
+
 from .roles import get_one_role
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)

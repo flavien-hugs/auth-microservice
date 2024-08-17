@@ -3,8 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import TypedDict
 
-from fastapi import FastAPI
-from fastapi import HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse
 from fastapi_pagination import add_pagination

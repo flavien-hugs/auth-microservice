@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from beanie import after_event, Update
+from beanie import Update, after_event
 from pydantic import Field
 
 

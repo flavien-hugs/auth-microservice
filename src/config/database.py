@@ -5,6 +5,7 @@ from beanie import Document, init_beanie
 from fastapi import FastAPI
 
 from src.common.helpers.mongodb import mongodb_client
+
 from .settings import get_settings
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)

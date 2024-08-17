@@ -4,12 +4,11 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security
 from starlette import status
 
+from src.config import enable_endpoint
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema
 from src.services import auth
-from src.config import enable_endpoint
-
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
 

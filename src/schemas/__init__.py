@@ -1,7 +1,7 @@
 from .auth import ChangePassword, LoginUser, ManageAccount, RequestChangePassword
 from .response import ResponseModelData
 from .roles import RoleModel
-from .users import UserBaseSchema, CreateUser, UpdateUser
+from .users import CreateUser, UpdateUser, UserBaseSchema
 
 __all__ = [
     "UserBaseSchema",
