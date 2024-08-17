@@ -68,12 +68,11 @@ jobs:
               - "3.x"
             os: [ ubuntu-latest ]
         runs-on: ${{ matrix.os }}
+        environment:
+            name: code-quality
         steps:
             - name: Checkout code
               uses: actions/checkout@v3
-              with:
-                python-version: ${{ matrix.python-version }}
-                architecture: 'x64'
 
             - name: Set up Python ${{ matrix.python-version }}
               uses: actions/setup-python@v3
@@ -103,6 +102,10 @@ jobs:
 
             - name: Run bandit
               run: poetry run bandit .
+
+            - uses: pyupio/safety-action@v1
+              with:
+                api-key: ${{ secrets.SAFETY_API_KEY }}
 
             - name: Run saftey
               run: poetry run safety check

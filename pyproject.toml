@@ -40,6 +40,7 @@ isort = "^5.13.2"
 bandit = "^1.7.9"
 safety = "^3.2.5"
 flake8 = "^7.1.1"
+flake8-pyproject = "^1.2.3"
 
 
 [tool.poetry.scripts]
@@ -48,6 +49,16 @@ app = 'src.cli:app'
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.flake8]
+max-line-length = 120
+exclude = [
+  ".git",
+  "*tests*",
+  "*common*",
+  "__pycache__"
+]
+
 
 [tool.black]
 line-length = 120
@@ -67,9 +78,15 @@ exclude = '''
     | buck-out
     | build
     | dist
+    | tests
   )/
 )
 '''
+
+[tool.isort]
+profile = "black"
+line-length = 120
+src_paths = ["isort", "test"]
 
 [tool.pytest.ini_options]
 env_files = 'tests/.test.env'
