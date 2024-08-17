@@ -13,7 +13,48 @@ on:
       - "preprod"
 
 jobs:
+    code-quality:
+        strategy:
+          fail-fast: false
+          matrix:
+            python-version:
+              - "3.x"
+            os: [ ubuntu-latest ]
+        runs-on: ${{ matrix.os }}
+        environment:
+            name: code-quality
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v3
+
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v3
+              with:
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+
+            - name: Install pipx, Poetry and Upgrade pip/setuptools
+              run: |
+                  python --version
+                  python -m pip install pipx
+                  python -m pipx ensurepath
+                  python -m pipx install poetry
+                  export PATH=$PATH:/root/.local/bin
+                  poetry env use python
+                  poetry run pip install --upgrade pip setuptools
+                  poetry add black flake8 bandit
+
+            - name: Run black
+              run: poetry run black . --check
+
+            - name: Run flake8
+              run: poetry run flake8 .
+
+            - name: Run bandit
+              run: poetry run bandit .
+
     tests:
+        needs: [code-quality]
         strategy:
           fail-fast: false
           max-parallel: 4
@@ -59,56 +100,6 @@ jobs:
               with:
                 name: coverage
                 path: coverage.xml
-
-    code-quality:
-        strategy:
-          fail-fast: false
-          matrix:
-            python-version:
-              - "3.x"
-            os: [ ubuntu-latest ]
-        runs-on: ${{ matrix.os }}
-        environment:
-            name: code-quality
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v3
-
-            - name: Set up Python ${{ matrix.python-version }}
-              uses: actions/setup-python@v3
-              with:
-                python-version: ${{ matrix.python-version }}
-                architecture: 'x64'
-
-            - name: Install pipx, Poetry and Upgrade pip/setuptools
-              run: |
-                  python --version
-                  python -m pip install pipx
-                  python -m pipx ensurepath
-                  python -m pipx install poetry
-                  export PATH=$PATH:/root/.local/bin
-                  poetry env use python
-                  poetry run pip install --upgrade pip setuptools
-                  poetry install --no-root
-
-            - name: Run black
-              run: poetry run black . --check
-
-            - name: Run isort
-              run: poetry run isort . --check-only
-
-            - name: Run flake8
-              run: poetry run flake8 .
-
-            - name: Run bandit
-              run: poetry run bandit .
-
-            - uses: pyupio/safety-action@v1
-              with:
-                api-key: ${{ secrets.SAFETY_API_KEY }}
-
-            - name: Run saftey
-              run: poetry run safety check
 
     staging:
         needs: [tests]

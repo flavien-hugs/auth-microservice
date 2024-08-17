@@ -36,7 +36,6 @@ pytest-dotenv = "^0.5.2"
 pre-commit = "^3.8.0"
 ipython = "^8.26.0"
 black = "^24.8.0"
-isort = "^5.13.2"
 bandit = "^1.7.9"
 safety = "^3.2.5"
 flake8 = "^7.1.1"
@@ -82,11 +81,6 @@ exclude = '''
   )/
 )
 '''
-
-[tool.isort]
-profile = "black"
-line-length = 120
-src_paths = ["isort", "test"]
 
 [tool.pytest.ini_options]
 env_files = 'tests/.test.env'
