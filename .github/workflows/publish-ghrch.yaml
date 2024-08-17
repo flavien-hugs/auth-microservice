@@ -69,23 +69,40 @@ jobs:
             os: [ ubuntu-latest ]
         runs-on: ${{ matrix.os }}
         steps:
-            - uses: actions/checkout@v3
+            - name: Checkout code
+              uses: actions/checkout@v3
               with:
                 python-version: ${{ matrix.python-version }}
                 architecture: 'x64'
-            - name: Run image
-              uses: abatilo/actions-poetry@v2.0.0
+            
+            - name: Set up Python ${{ matrix.python-version }}
+              uses: actions/setup-python@v3
               with:
-                poetry-version: ${{ matrix.poetry-version }}
-            - name: Install dependencies
-              run: poetry install
+                python-version: ${{ matrix.python-version }}
+                architecture: 'x64'
+            
+            - name: Install pipx, Poetry and Upgrade pip/setuptools
+              run: |
+                  python --version
+                  python -m pip install pipx
+                  python -m pipx ensurepath
+                  python -m pipx install poetry
+                  export PATH=$PATH:/root/.local/bin
+                  poetry env use python
+                  poetry run pip install --upgrade pip setuptools
+                  poetry install --no-root
+            
             - name: Run black
               run: poetry run black . --check
+            
             - name: Run isort
               run: poetry run isort . --check-only
+            
             - run: poetry run flake8 .
+            
             - name: Run bandit
               run: poetry run bandit .
+            
             - name: Run saftey
               run: poetry run safety check
 

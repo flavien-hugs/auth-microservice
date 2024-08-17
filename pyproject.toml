@@ -35,6 +35,10 @@ pytest-dotenv = "^0.5.2"
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
 ipython = "^8.26.0"
+black = "^24.8.0"
+isort = "^5.13.2"
+bandit = "^1.7.9"
+safety = "^3.2.5"
 
 
 [tool.poetry.scripts]
