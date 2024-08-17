@@ -14,10 +14,10 @@ pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.0"}
 pydantic-settings = "^2.4.0"
 fastapi-jwt = "^0.3.0"
 python-jose = "^3.3.0"
-fastapi = {extras = ["all"], version = "^0.112.0"}
 pyotp = "^2.9.0"
-uvloop = "^0.19.0"
 httptools = "^0.6.1"
+fastapi = {extras = ["standard"], version = "^0.112.1"}
+uvloop = "^0.20.0"
 
 
 [tool.poetry.group.test.dependencies]
@@ -39,6 +39,7 @@ black = "^24.8.0"
 isort = "^5.13.2"
 bandit = "^1.7.9"
 safety = "^3.2.5"
+flake8 = "^7.1.1"
 
 
 [tool.poetry.scripts]

@@ -9,7 +9,7 @@ from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
 from src.services import roles, users
-from src.shared.utils import customize_page, SortEnum
+from src.shared.utils import SortEnum, customize_page
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 

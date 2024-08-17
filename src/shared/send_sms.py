@@ -1,9 +1,9 @@
-import httpx
 import logging
+
+import httpx
 from starlette.background import BackgroundTasks
 
 from src.config import sms_config
-
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 _log = logging.getLogger(__name__)

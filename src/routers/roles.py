@@ -5,13 +5,12 @@ from fastapi import APIRouter, Body, Depends, Query, Security, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
+from src.config import enable_endpoint
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
-from src.shared.utils import customize_page, SortEnum
-from src.config import enable_endpoint
-
+from src.shared.utils import SortEnum, customize_page
 
 role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 

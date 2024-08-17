@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 import pymongo
 from beanie import Indexed, PydanticObjectId
-from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
+from pydantic import BaseModel, EmailStr, Field, StrictStr, field_validator
 from starlette import status
 
 from src.common.helpers.exceptions import CustomHTTException

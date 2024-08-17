@@ -16,6 +16,7 @@ from src.schemas import ChangePassword, LoginUser, UserBaseSchema
 from src.shared import blacklist_token, mail_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
+
 from .roles import get_one_role
 from .users import check_if_email_exist, get_one_user
 

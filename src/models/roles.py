@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional
 
 import pymongo
-from beanie import before_event, Document, Indexed, Insert
+from beanie import Document, Indexed, Insert, before_event
 from slugify import slugify
 from starlette import status
 
@@ -9,6 +9,7 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.config import settings
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
+
 from .mixins import DatetimeTimestamp
 
 

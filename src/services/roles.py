@@ -1,18 +1,20 @@
 import logging
 import os
-from typing import Sequence, Set, Optional
+from typing import Optional, Sequence, Set
 
 from beanie import PydanticObjectId
+from fastapi_pagination import paginate
+from pymongo import ASCENDING, DESCENDING
 from slugify import slugify
 from starlette import status
-from pymongo import ASCENDING, DESCENDING
+
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
-from .perms import get_all_permissions
 from src.shared.utils import SortEnum
-from fastapi_pagination import paginate
+
+from .perms import get_all_permissions
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)

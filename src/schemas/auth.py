@@ -1,6 +1,6 @@
 from hmac import compare_digest
 
-from pydantic import BaseModel, EmailStr, model_validator, StrictBool
+from pydantic import BaseModel, EmailStr, StrictBool, model_validator
 from starlette import status
 
 from src.common.helpers.exceptions import CustomHTTException

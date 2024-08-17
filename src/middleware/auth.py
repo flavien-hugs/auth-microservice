@@ -5,7 +5,7 @@ from typing import Set
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
 from fastapi_jwt import JwtAccessBearer
-from jose import ExpiredSignatureError, jwt, JWTError
+from jose import ExpiredSignatureError, JWTError, jwt
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -13,8 +13,8 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings
 from src.services.roles import get_one_role
-from src.shared.error_codes import AuthErrorCode
 from src.shared import blacklist_token
+from src.shared.error_codes import AuthErrorCode
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 

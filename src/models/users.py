@@ -1,11 +1,12 @@
 from typing import Any, Dict
 
 from beanie import Document
-from pydantic import field_validator, StrictBool
+from pydantic import StrictBool, field_validator
 from slugify import slugify
 
 from src.config import settings
 from src.schemas import CreateUser
+
 from .mixins import DatetimeTimestamp
 
 

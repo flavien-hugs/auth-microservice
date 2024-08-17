@@ -6,7 +6,7 @@ from beanie import init_beanie
 from httpx import AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
-from src.config import settings, jwt_settings
+from src.config import jwt_settings, settings
 
 
 @pytest.fixture
