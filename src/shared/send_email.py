@@ -1,5 +1,6 @@
 import logging
 import smtplib
+import ssl
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -53,7 +54,8 @@ class MailServiceHandler:
 
         try:
             with smtplib.SMTP(host=self.smtp_server, port=self.smtp_port) as server:
-                server.starttls()
+                server.ehlo()
+                server.starttls(context=ssl.create_default_context())
                 server.login(user=self.email_address, password=self.email_password)
                 server.sendmail(from_addr=self.email_address, to_addrs=receiver_email, msg=message.as_string())
                 server.quit()
