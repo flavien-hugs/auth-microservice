@@ -1,13 +1,13 @@
-from datetime import datetime
+from datetime import datetime, UTC
+from typing import Optional
 
-from beanie import Update, after_event
-from pydantic import Field
+from beanie import after_event, Update
 
 
 class DatetimeTimestamp:
-    created_at: datetime = Field(default=datetime.now(), description="Create date")
-    updated_at: datetime = Field(default=datetime.now(), description="Updated date")
+    created_at: Optional[datetime] = datetime.now(tz=UTC)
+    updated_at: Optional[datetime] = None
 
     @after_event(Update)
     def set_updated_at(self):
-        self.updated_at = datetime.now()
+        self.updated_at = datetime.now(tz=UTC)
