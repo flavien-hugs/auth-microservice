@@ -1,6 +1,5 @@
 from typing import Any, Dict, Optional
 
-import pymongo
 from beanie import Indexed, PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field, StrictStr, field_validator
 from starlette import status
@@ -28,7 +27,7 @@ class UserBaseSchema(BaseModel):
 
 
 class CreateUser(UserBaseSchema):
-    email: Indexed(EmailStr, pymongo.TEXT)
+    email: Indexed(EmailStr, unique=True)
 
     @classmethod
     @field_validator("email", mode="after")

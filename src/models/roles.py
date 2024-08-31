@@ -15,10 +15,19 @@ from .mixins import DatetimeTimestamp
 
 class Role(RoleModel, DatetimeTimestamp, Document):
     permissions: List[Dict] = []
-    slug: Optional[Indexed(str, pymongo.TEXT, unique=True)] = None
+    slug: Optional[Indexed(str, unique=True)] = None
 
     class Settings:
         name = settings.ROLE_MODEL_NAME
+        indexes = [
+            pymongo.IndexModel(
+                keys=[
+                    ("name", pymongo.TEXT),
+                    ("description", pymongo.TEXT),
+                    ("slug", pymongo.TEXT),
+                ]
+            )
+        ]
 
     @before_event(Insert)
     async def generate_unique_slug(self, **kwargs):

@@ -28,13 +28,13 @@ class SendSMSHandler:
                 "Sender": self._sender,
             }
             response = await client.post(self._url, json=payload)
-            try:
-                response.raise_for_status()
-            except httpx.HTTPStatusError as exc:
-                _log.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
-                raise
+        try:
+            response.raise_for_status()
+        except httpx.HTTPStatusError as exc:
+            _log.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
+            raise
 
-            return response.text
+        return response.text
 
     def send_sms_background(self, background_task: BackgroundTasks, recipient: str, message: str):
         background_task.add_task(self.send_sms, recipient, message)
