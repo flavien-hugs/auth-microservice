@@ -1,5 +1,6 @@
 from typing import Any, Dict
 
+import pymongo
 from beanie import Document
 from pydantic import StrictBool, field_validator
 from slugify import slugify
@@ -16,6 +17,7 @@ class User(CreateUser, DatetimeTimestamp, Document):
 
     class Settings:
         name = settings.USER_MODEL_NAME
+        indexes = [pymongo.IndexModel(keys=[("fullname", pymongo.TEXT)])]
 
     @field_validator("attributes", mode="before")
     def slugify_attributes_keys(cls, value):  # noqa: B902

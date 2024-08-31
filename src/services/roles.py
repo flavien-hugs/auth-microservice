@@ -35,7 +35,7 @@ async def create_role(role: RoleModel) -> Role:
 async def create_first_role():
     paylaod = {"name": os.getenv("DEFAULT_ADMIN_ROLE"), "description": os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")}
 
-    slug_value = os.getenv("DEFAULT_ADMIN_ROLE")
+    slug_value = slugify(paylaod["name"])
     if await Role.find_one({"slug": slug_value}).exists():
         logger.info("--> Role is exist !")
         return

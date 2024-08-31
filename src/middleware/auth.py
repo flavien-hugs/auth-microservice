@@ -1,14 +1,16 @@
 import logging
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Set
 
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
 from fastapi_jwt import JwtAccessBearer
-from jose import ExpiredSignatureError, JWTError, jwt
+from jose import ExpiredSignatureError, jwt, JWTError
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
+from slugify import slugify
 
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings
@@ -110,18 +112,20 @@ class CustomAccessBearer:
 
         role = await get_one_role(role_id=user_role_id)
 
-        user_permissions = []
-        for permissions in role.permissions:
-            for perm in permissions["permissions"]:
-                user_permissions.append(perm["code"])
+        default_role = os.getenv("DEFAULT_ADMIN_ROLE")
+        if role.slug == slugify(default_role):
+            return True
 
-        if not any(perm in user_permissions for perm in required_permissions):
+        user_permissions = {perm["code"] for permissions in role.permissions for perm in permissions["permissions"]}
+
+        if required_permissions & user_permissions:
+            return True
+        else:
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
                 message_error="You do not have the necessary permissions to access this resource.",
                 status_code=status.HTTP_403_FORBIDDEN,
             )
-        return True
 
 
 class AuthorizedHTTPBearer(HTTPBearer):
