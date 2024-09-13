@@ -1,3 +1,4 @@
+import re
 from typing import Any, Dict, Optional
 
 from beanie import Indexed, PydanticObjectId
@@ -9,9 +10,19 @@ from src.config import settings
 from src.shared.error_codes import AuthErrorCode
 
 
-class UserBaseSchema(BaseModel):
-    fullname: Optional[StrictStr] = Field(..., examples=["John Doe"])
-    role: Optional[PydanticObjectId] = Field(..., description="User role")
+class PhonenumberModel(BaseModel):
+    phonenumber: Optional[Indexed(str, unique=True)] = Field(default=None, examples=["+2250151571396"])
+
+    @field_validator("phonenumber", mode="before")
+    def phonenumber_validation(cls, value):  # noqa: B902
+        if value and not re.match(r"^\+?1?\d{9,15}$", value):
+            raise ValueError("Invalid phone number")
+        return value
+
+
+class UserBaseSchema(PhonenumberModel):
+    fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
+    role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
     password: str = Field(default=None, examples=["p@55word"])
 
@@ -27,7 +38,7 @@ class UserBaseSchema(BaseModel):
 
 
 class CreateUser(UserBaseSchema):
-    email: Indexed(EmailStr, unique=True)
+    email: Optional[Indexed(EmailStr, unique=True, sparse=True)] = None
 
     @classmethod
     @field_validator("email", mode="after")

@@ -9,7 +9,7 @@ perm_router = APIRouter(prefix="/permissions", tags=["PERMISSIONS"], redirect_sl
     "",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-permission"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-permission"})),
     ],
     summary="Get all permissions",
     status_code=status.HTTP_200_OK,

@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Optional, Sequence, Set
+from datetime import datetime, UTC
 
 from beanie import PydanticObjectId
 from fastapi_pagination import paginate
@@ -77,7 +78,11 @@ async def get_one_role(role_id: PydanticObjectId) -> Role:
 async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role:
     role = await get_one_role(role_id=role_id)
     result = await role.set(
-        {**update_role.model_dump(exclude_none=True, exclude_unset=True), "slug": slugify(update_role.name)}
+        {
+            **update_role.model_dump(exclude_none=True, exclude_unset=True),
+            "slug": slugify(update_role.name),
+            "updated_at": datetime.now(tz=UTC),
+        }
     )
     return result
 

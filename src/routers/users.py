@@ -18,7 +18,7 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
     "",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-create-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-user"})),
     ],
     response_model=User,
     response_model_exclude={"password", "is_primary"},
@@ -31,29 +31,6 @@ async def create_user(payload: CreateUser = Body(...)):
 
     This endpoint allows an authorized user with the `can create user` permission to create a new user.
     The new user's details are provided in the request body.
-
-    Args:
-    - payload (CreateUser): The data required to create a new user, including username, email, and other attributes.
-
-    Returns:
-    - User: The newly created user object.
-
-    Example of use:
-
-    ```bash
-
-    curl -X POST "http://yourapi.com/users"
-    -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-    -H "Content-Type: application/json"
-    -d '{
-        "email": "newuser@example.com",
-        "fullanme": "newuser",
-        "role": "5eb7cf5a86d9755df3a6c593",
-        "attributes": {"key": "value"},
-        "password": "securepassword",
-    }'
-
-    ```
     """
     return await users.create_user(payload)
 
@@ -63,7 +40,7 @@ async def create_user(payload: CreateUser = Body(...)):
     response_model=customize_page(User),
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
     summary="Get all users",
     status_code=status.HTTP_200_OK,
@@ -100,7 +77,7 @@ async def listing_users(
     response_model=UserOut,
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
     response_model_exclude={"password", "is_primary"},
     summary="Get single user",
@@ -115,7 +92,7 @@ async def get_user(id: PydanticObjectId):
     response_model=User,
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-update-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
     response_model_exclude={"password", "is_primary"},
     summary="Update user information",
@@ -129,7 +106,7 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
     "/{id}",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-delete-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-user"})),
     ],
     summary="Delete one user",
     status_code=status.HTTP_200_OK,

@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Set, Optional
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security
@@ -7,10 +7,15 @@ from starlette import status
 from src.config import enable_endpoint
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
-from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema
+from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema, PhonenumberModel
 from src.services import auth
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
+
+
+@auth_router.post("/register", summary="Register with phone number", status_code=status.HTTP_201_CREATED)
+async def register(bg: BackgroundTasks, payload: PhonenumberModel = Body(...)):
+    return await auth.register_user(bg, payload)
 
 
 @auth_router.post("/login", summary="Login User", status_code=status.HTTP_200_OK)
@@ -89,3 +94,12 @@ if bool(enable_endpoint.SHOW_CREATE_NEW_ACCOUNT_ENDPOINT):
     )
     async def create_new_account(token: str, background: BackgroundTasks, payload: UserBaseSchema = Body(...)):
         return await auth.create_new_account_with_send_email(token=token, user_data=payload, background=background)
+
+
+if bool(enable_endpoint.SHOW_CHECK_USER_ATTRIBUTE_ENDPOINT):
+
+    @auth_router.get("/check-attribute", summary="Check if user attributes exists", status_code=status.HTTP_200_OK)
+    async def check_user_attributes(
+        key: str = Query(...), value: str = Query(...), in_attributes: Optional[bool] = Query(default=False)
+    ):
+        return await auth.check_user_attribute(key=key, value=value, in_attributes=in_attributes)

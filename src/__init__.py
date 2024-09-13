@@ -56,14 +56,6 @@ app: FastAPI = FastAPI(
     root_path_in_servers=False,
 )
 
-app.include_router(auth_router)
-app.include_router(user_router)
-app.include_router(role_router)
-app.include_router(perm_router)
-add_pagination(app)
-
-setup_exception_handlers(app)
-
 
 @app.exception_handler(HTTPException)
 def authentication_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
@@ -94,3 +86,12 @@ async def read_root():
 @app.get("/@ping", tags=["DEFAULT"], summary="Check if server is available")
 async def ping():
     return {"message": "pong !"}
+
+
+app.include_router(auth_router)
+app.include_router(user_router)
+app.include_router(role_router)
+app.include_router(perm_router)
+add_pagination(app)
+
+setup_exception_handlers(app)

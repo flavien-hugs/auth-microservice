@@ -20,6 +20,8 @@ class UserErrorCode(StrEnum):
     USER_UPDATE_INFO_FAILED = "users/update-user-failed"
     USER_EMAIL_ALREADY_EXIST = "users/email-already-exist"
     FIRST_USER_ALREADY_EXIST = "users/first-user-alreary-exist"
+    USER_PHONENUMBER_NOT_FOUND = "users/phone-number-not-found"
+    USER_PHONENUMBER_TAKEN = "users/phonenumber-already-taken"
 
 
 class RoleErrorCode(StrEnum):

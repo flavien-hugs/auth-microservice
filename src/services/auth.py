@@ -1,22 +1,20 @@
 from datetime import datetime, timedelta, timezone
-
+from typing import Optional
 from beanie import PydanticObjectId
-from fastapi import BackgroundTasks, Request
+from fastapi import BackgroundTasks, Request, status
 from fastapi.encoders import jsonable_encoder
+from fastapi.responses import JSONResponse
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
-from starlette import status
-from starlette.responses import JSONResponse
 
 from src.common.helpers.exceptions import CustomHTTException
-from src.config import email_settings, settings
+from src.config import email_settings, settings, sms_config
 from src.middleware.auth import CustomAccessBearer
 from src.models import User
-from src.schemas import ChangePassword, LoginUser, UserBaseSchema
-from src.shared import blacklist_token, mail_service
+from src.schemas import ChangePassword, LoginUser, UserBaseSchema, PhonenumberModel
+from src.shared import blacklist_token, mail_service, sms_service, otp_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
-
 from .roles import get_one_role
 from .users import check_if_email_exist, get_one_user
 
@@ -239,3 +237,34 @@ async def create_new_account_with_send_email(
     )
 
     return new_user
+
+
+async def check_user_attribute(key: str, value: str, in_attributes: Optional[bool] = False) -> JSONResponse:
+    query = {f"attributes.{key}": value} if in_attributes else {key: value}
+    can = await User.find_one(query).exists()
+    return JSONResponse(status_code=status.HTTP_200_OK, content={"exists": can})
+
+
+async def register_user(background: BackgroundTasks, payload: PhonenumberModel):
+    if await User.find_one({"phonenumber": payload.phonenumber}).exists():
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
+            message_error=f"This phone number '{payload.phonenumber}' is invalid or does not exist.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    otp_secret = otp_service.generate_key()
+    otp_code = otp_service.generate_otp_instance(otp_secret).now()
+    recipient = payload.phonenumber.replace("+", "")
+
+    new_user = User(**payload.model_dump())
+    new_user.attributes = {"otp_secret": otp_secret}
+
+    message = (f"Bonjour, utilsez ce code OTP: {otp_code} pour vous connecter à votre compte {sms_config.SMS_SENDER}.",)
+    await sms_service.send_sms(background, recipient, message)
+
+    await new_user.create()
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": f"We had sent a connection code to the phone number: {payload.phonenumber}"},
+    )

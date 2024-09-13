@@ -17,27 +17,30 @@ class SendSMSHandler:
         self._sender = sender
         self._username = username
 
-    async def send_sms(self, recipient: str, message: str):
+    async def __call__(self, recipient: str, message: str) -> str:
+        payload = {
+            "Username": self._username,
+            "Token": self._token,
+            "Dest": recipient,
+            "Sms": message,
+            "Sender": self._sender,
+        }
+
+        print(payload)
 
         async with httpx.AsyncClient() as client:
-            payload = {
-                "Username": self._username,
-                "Token": self._token,
-                "Dest": recipient,
-                "Sms": message,
-                "Sender": self._sender,
-            }
             response = await client.post(self._url, json=payload)
+
         try:
             response.raise_for_status()
         except httpx.HTTPStatusError as exc:
             _log.error(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}.")
-            raise
+            raise exc
 
         return response.text
 
-    def send_sms_background(self, background_task: BackgroundTasks, recipient: str, message: str):
-        background_task.add_task(self.send_sms, recipient, message)
+    async def send_sms(self, background_task: BackgroundTasks, recipient: str, message: str):
+        background_task.add_task(self.__call__, recipient, message)
         _log.info("Email scheduled to be sent in the background.")
 
 

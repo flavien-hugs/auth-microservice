@@ -1,6 +1,7 @@
 import logging
 import os
 from typing import Sequence
+from datetime import datetime, UTC
 
 from beanie import PydanticObjectId
 from fastapi import status
@@ -100,9 +101,11 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
     if update_user.role:
         await get_one_role(role_id=PydanticObjectId(update_user.role))
     user = await get_one_user(user_id=user_id)
-    await user.set({**update_user.model_dump(exclude_none=True, exclude_unset=True)})
+    user_doc = await user.set(
+        {**update_user.model_dump(exclude_none=True, exclude_unset=True), "updated_at": datetime.now(tz=UTC)}
+    )
 
-    role = await get_one_role(role_id=PydanticObjectId(user.role))
+    role = await get_one_role(role_id=PydanticObjectId(user_doc.role))
     return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
 
 

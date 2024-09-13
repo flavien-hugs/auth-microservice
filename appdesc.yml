@@ -5,52 +5,52 @@
         en: "Authentication and user management"
     permissions:
         -
-            code: "can-create-user"
+            code: "auth:can-create-user"
             desc:
                 fr: "Peut ajouter un utilisateur"
                 en: "Can add user"
         -
-            code: "can-update-user"
+            code: "auth:can-update-user"
             desc:
                 fr: "Peut mettre à jour les informations d'un utilisateur"
                 en: "Can update user information"
         -
-            code: "can-display-user"
+            code: "auth:can-display-user"
             desc:
                 fr: "Peut afficher les information d'un utilisateur"
                 en: "Can view user information"
         -
-            code: "can-delete-user"
+            code: "auth:can-delete-user"
             desc:
                 fr: "Peut supprimer un utilisateur"
                 en: "Can delete user"
         -
-            code: "can-create-role"
+            code: "auth:can-create-role"
             desc:
                 fr: "Peut ajouter un rôle"
                 en: "Can add role"
         -
-            code: "can-update-role"
+            code: "auth:can-update-role"
             desc:
                 fr: "Peut mettre à jour un rôle"
                 en: "Can update role"
         -
-            code: "can-display-role"
+            code: "auth:can-display-role"
             desc:
                 fr: "Peut afficher un rôle"
                 en: "Can view role information"
         -
-            code: "can-delete-role"
+            code: "auth:can-delete-role"
             desc:
                 fr: "Peut supprimer un rôle"
                 en: "Can delete role"
         -
-            code: "can-display-permission"
-            desc:
-                fr: "Peut afficher une permission"
-                en: "Can view permission information"
-        -
-            code: "can-assign-permission-role"
+            code: "auth:can-assign-permission-role"
             desc:
                 fr: "Peut assigner des permissions à un rôle"
                 en: "Can assign permissions to roles"
+        -
+            code: "auth:can-display-permission"
+            desc:
+                fr: "Peut afficher une permission"
+                en: "Can view permission information"

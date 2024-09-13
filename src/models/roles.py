@@ -15,7 +15,7 @@ from .mixins import DatetimeTimestamp
 
 class Role(RoleModel, DatetimeTimestamp, Document):
     permissions: List[Dict] = []
-    slug: Optional[Indexed(str, unique=True)] = None
+    slug: Optional[Indexed(str)] = None
 
     class Settings:
         name = settings.ROLE_MODEL_NAME

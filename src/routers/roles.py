@@ -19,7 +19,7 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
     "",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-create-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-role"})),
     ],
     response_model=Role,
     summary="Create role",
@@ -34,7 +34,7 @@ async def create_role(payload: RoleModel = Body(...)):
     response_model=customize_page(Role),
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
     ],
     summary="Get all roles",
     status_code=status.HTTP_200_OK,
@@ -56,7 +56,7 @@ async def listing_roles(
     "/{id}",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
     ],
     summary="Get one roles",
     status_code=status.HTTP_200_OK,
@@ -69,7 +69,7 @@ async def ger_role(id: PydanticObjectId):
     "/{id}",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-update-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-role"})),
     ],
     summary="Update role",
     status_code=status.HTTP_200_OK,
@@ -82,7 +82,7 @@ async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
     "/{id}",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-delete-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-role"})),
     ],
     summary="Delete role",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -97,7 +97,7 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
         "/{id}/members",
         dependencies=[
             Security(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-display-user"})),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
         ],
         response_model=customize_page(dict),
         summary="Get role members",
@@ -114,7 +114,7 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     "/{id}/assign-permissions",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-update-role", "can-assign-permission-role"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-assign-permission-role"})),
     ],
     response_model=Role,
     summary="Assign permissions to role",
