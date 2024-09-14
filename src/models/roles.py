@@ -19,6 +19,7 @@ class Role(RoleModel, DatetimeTimestamp, Document):
 
     class Settings:
         name = settings.ROLE_MODEL_NAME
+        use_state_management = True
         indexes = [
             pymongo.IndexModel(
                 keys=[

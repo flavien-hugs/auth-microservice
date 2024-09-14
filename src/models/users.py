@@ -16,6 +16,7 @@ class User(CreateUser, DatetimeTimestamp, Document):
 
     class Settings:
         name = settings.USER_MODEL_NAME
+        use_state_management = True
         indexes = [pymongo.IndexModel(keys=[("fullname", pymongo.TEXT)])]
 
     @field_validator("attributes", mode="before")
