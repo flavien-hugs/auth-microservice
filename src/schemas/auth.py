@@ -45,7 +45,7 @@ class RequestChangePassword(SignupBaseModel, EmailModelMixin):
 
 
 class VerifyOTP(PhonenumberModel):
-    otp_code: int
+    otp_code: str
 
 
 class LoginUser(RequestChangePassword):

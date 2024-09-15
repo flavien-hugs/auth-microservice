@@ -326,23 +326,25 @@ async def verify_otp(payload: VerifyOTP):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-    if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(payload.otp_code):
+    if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(int(payload.otp_code)):
         raise CustomHTTException(
             code_error=AuthErrorCode.AUTH_OTP_NOT_VALID,
-            message_error=f"Code OTP '{payload.otp_code}' invalid",
+            message_error=f"Code OTP '{int(payload.otp_code)}' invalid",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     await user.set({"is_active": True})
-    role = await get_one_role(role_id=PydanticObjectId(user.role))
-    user_data = user.model_dump(by_alias=True, exclude={"password", "attributes", "is_primary"})
+    # role = await get_one_role(role_id=PydanticObjectId(user.role))
+    user_data = user.model_dump(
+        by_alias=True, exclude={"password", "attributes.otp_secret", "attributes.otp_created_at", "is_primary"}
+    )
 
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-    response_data["user"]["role"] = role.model_dump(by_alias=True)
+    # response_data["user"]["role"] = role.model_dump(by_alias=True)
     return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
 

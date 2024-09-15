@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, UTC
-from typing import Optional, Sequence, Set
+from typing import Optional, Sequence, Set, List, Dict
 
 from beanie import PydanticObjectId
 from fastapi_pagination import paginate
@@ -20,51 +20,50 @@ logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def create_role(role: RoleModel) -> Role:
-    """
+async def get_formatted_permissions() -> List[Dict]:
+    all_permissions = await get_all_permissions()
+    formatted_permissions = []
 
-    :param role:
-    :type role:
-    :return:
-    :rtype:
-    """
+    for permission in all_permissions:
+        service_info = {"name": permission["app"], "title": permission["title"]}
+        service_permissions = [
+            {"code": perm["code"], "description": perm["desc"]} for perm in permission["permissions"]
+        ]
+
+        if service_permissions:
+            formatted_permissions.append({"service_info": service_info, "permissions": service_permissions})
+
+    return formatted_permissions
+
+
+async def create_role(role: RoleModel) -> Role:
     new_role = await Role(**role.model_dump()).create()
     return new_role
 
 
-async def create_admin_role():
-    paylaod = {"name": os.getenv("DEFAULT_ADMIN_ROLE"), "description": os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")}
-
-    slug_value = slugify(paylaod["name"])
+async def insert_default_role(name: str, permissions: List[Dict], description: str = None) -> None:
+    slug_value = slugify(name)
     if await Role.find_one({"slug": slug_value}).exists():
-        logger.info("--> Role is exist !")
+        logger.info(f"--> Role '{name}' already exists!")
         return
-    else:
-        all_permissions = await get_all_permissions()
-        new_permissions = []
 
-        for permission in all_permissions:
-            service_info = {"name": permission["app"], "title": permission["title"]}
-            service_permissions = []
+    role_data = {"name": name, "permissions": permissions}
+    if description:
+        role_data["description"] = description
 
-            for perm in permission["permissions"]:
-                service_permissions.append({"code": perm["code"], "description": perm["desc"]})
+    await Role(**role_data).create()
+    logger.info(f"--> Role '{name}' created successfully!")
 
-            if service_permissions:
-                new_permissions.append({"service_info": service_info, "permissions": service_permissions})
 
-        await Role(**paylaod, permissions=new_permissions).create()
-        logger.info("--> Create role successfully !")
+async def create_admin_role():
+    admin_role_name = os.getenv("DEFAULT_ADMIN_ROLE")
+    admin_role_description = os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")
+    permissions = await get_formatted_permissions()
+
+    await insert_default_role(admin_role_name, permissions, admin_role_description)
 
 
 async def get_one_role(role_id: PydanticObjectId) -> Role:
-    """
-
-    :param role_id:
-    :type role_id:
-    :return:
-    :rtype:
-    """
     if (role := await Role.get(document_id=PydanticObjectId(role_id))) is None:
         raise CustomHTTException(
             code_error=RoleErrorCode.ROLE_NOT_FOUND,
@@ -96,17 +95,6 @@ async def get_roles_members(role_id: PydanticObjectId, sorting: Optional[SortEnu
 
 
 async def assign_permissions_to_role(role_id: PydanticObjectId, permission_codes: Set[str]) -> Role:
-    """
-    Ajouter une liste de permissions à un rôle.
-
-    :param role_id: ID du rôle
-    :type role_id: PydanticObjectId
-    :param permission_codes: Liste de permissions à ajouter
-    :type permission_codes: set
-    :return: Le role mis à jour
-    :rtype: dict
-    """
-
     role = await get_one_role(role_id=role_id)
     old_permissions = role.permissions.copy()
 
@@ -132,23 +120,9 @@ async def assign_permissions_to_role(role_id: PydanticObjectId, permission_codes
 
 
 async def delete_role(role_id: PydanticObjectId) -> None:
-    """
-
-    :param role_id:
-    :type role_id:
-    :return:
-    :rtype:
-    """
     await Role.find_one({"_id": PydanticObjectId(role_id)}).delete()
 
 
 async def delete_many_roles(role_ids: Sequence[PydanticObjectId]) -> None:
-    """
-
-    :param role_ids:
-    :type role_ids:
-    :return:
-    :rtype:
-    """
     valid_oids = [PydanticObjectId(oid) for oid in role_ids]
     await Role.find({"_id": {"$in": valid_oids}}).delete()

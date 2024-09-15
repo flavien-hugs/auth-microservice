@@ -49,7 +49,12 @@ async def login(payload: LoginUser = Body(...)):
 
 if not bool(settings.REGISTER_WITH_EMAIL):
 
-    @auth_router.post("/verify-otp", summary="Verify OTP Code", status_code=status.HTTP_200_OK)
+    @auth_router.post(
+        "/verify-otp",
+        response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+        summary="Verify OTP Code",
+        status_code=status.HTTP_200_OK,
+    )
     async def verif_otp_code(payload: VerifyOTP = Body(...)):
         return await auth.verify_otp(payload)
 
