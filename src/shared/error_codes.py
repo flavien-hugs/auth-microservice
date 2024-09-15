@@ -11,6 +11,8 @@ class AuthErrorCode(StrEnum):
     AUTH_EXPIRED_ACCESS_TOKEN = "auth/expired-access-token"
     AUTH_INVALID_ACCESS_TOKEN = "auth/invalid-access-token"
     AUTH_INSUFFICIENT_PERMISSION = "auth/insufficient-permission"
+    AUTH_OTP_NOT_VALID = "auth/otp-not-valid"
+    AUTH_OTP_EXPIRED = "auth/otp-code-expired"
 
 
 class UserErrorCode(StrEnum):

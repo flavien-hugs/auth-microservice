@@ -1,8 +1,8 @@
 import re
 from typing import Any, Dict, Optional
 
-from beanie import Indexed, PydanticObjectId
-from pydantic import BaseModel, EmailStr, Field, StrictStr, field_validator
+from beanie import PydanticObjectId
+from pydantic import BaseModel, EmailStr, Field, StrictStr, field_validator, model_validator
 from starlette import status
 
 from src.common.helpers.exceptions import CustomHTTException
@@ -11,7 +11,7 @@ from src.shared.error_codes import AuthErrorCode
 
 
 class PhonenumberModel(BaseModel):
-    phonenumber: Optional[Indexed(str, unique=True)] = Field(default=None, examples=["+2250151571396"])
+    phonenumber: Optional[str] = Field(default=None, examples=["+2250151571396"])
 
     @field_validator("phonenumber", mode="before")
     def phonenumber_validation(cls, value):  # noqa: B902
@@ -20,16 +20,15 @@ class PhonenumberModel(BaseModel):
         return value
 
 
-class UserBaseSchema(PhonenumberModel):
-    fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
-    role: Optional[PydanticObjectId] = Field(default=None, description="User role")
-    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
-    password: str = Field(default=None, examples=["p@55word"])
+class SignupBaseModel(PhonenumberModel):
+    password: Optional[str] = None
 
-    @field_validator("password", mode="before")
-    def validate_password_length(cls, value):  # noqa: B902
-        if len(value) > settings.PASSWORD_MIN_LENGTH:
-            return value
+    @model_validator(mode="before")
+    @classmethod
+    def validate_password(cls, values: dict):
+        password = values.get("password")
+        if len(password) > settings.PASSWORD_MIN_LENGTH:
+            return values
         raise CustomHTTException(
             code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
             message_error="The password must be 6 characters or more.",
@@ -37,8 +36,14 @@ class UserBaseSchema(PhonenumberModel):
         )
 
 
+class UserBaseSchema(SignupBaseModel):
+    fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
+    role: Optional[PydanticObjectId] = Field(default=None, description="User role")
+    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
+
+
 class CreateUser(UserBaseSchema):
-    email: Optional[Indexed(EmailStr, unique=True, sparse=True)] = None
+    email: Optional[EmailStr] = None
 
     @classmethod
     @field_validator("email", mode="after")

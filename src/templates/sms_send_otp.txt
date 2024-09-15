@@ -1,0 +1,1 @@
+Bonjour, utilsez ce code OTP: {{ otp_code }} pour valider votre compte {{ service_name }}.

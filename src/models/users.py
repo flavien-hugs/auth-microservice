@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 import pymongo
 from beanie import Document
@@ -11,8 +11,8 @@ from .mixins import DatetimeTimestamp
 
 
 class User(CreateUser, DatetimeTimestamp, Document):
-    is_active: StrictBool = True
-    is_primary: StrictBool = False
+    is_active: Optional[StrictBool] = True
+    is_primary: Optional[StrictBool] = False
 
     class Settings:
         name = settings.USER_MODEL_NAME

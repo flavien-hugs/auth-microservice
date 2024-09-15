@@ -1,7 +1,7 @@
 import logging
 import os
-from typing import Optional, Sequence, Set
 from datetime import datetime, UTC
+from typing import Optional, Sequence, Set
 
 from beanie import PydanticObjectId
 from fastapi_pagination import paginate
@@ -14,7 +14,6 @@ from src.models import Role, User
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
 from src.shared.utils import SortEnum
-
 from .perms import get_all_permissions
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -33,7 +32,7 @@ async def create_role(role: RoleModel) -> Role:
     return new_role
 
 
-async def create_first_role():
+async def create_admin_role():
     paylaod = {"name": os.getenv("DEFAULT_ADMIN_ROLE"), "description": os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")}
 
     slug_value = slugify(paylaod["name"])

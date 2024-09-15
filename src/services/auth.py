@@ -1,7 +1,8 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from typing import Optional
+
 from beanie import PydanticObjectId
-from fastapi import BackgroundTasks, Request, status
+from fastapi import BackgroundTasks, HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 from jinja2 import Environment, PackageLoader, select_autoescape
@@ -11,8 +12,8 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.config import email_settings, settings, sms_config
 from src.middleware.auth import CustomAccessBearer
 from src.models import User
-from src.schemas import ChangePassword, LoginUser, UserBaseSchema, PhonenumberModel
-from src.shared import blacklist_token, mail_service, sms_service, otp_service
+from src.schemas import ChangePassword, LoginUser, PhonenumberModel, UserBaseSchema, VerifyOTP, RequestChangePassword
+from src.shared import blacklist_token, mail_service, otp_service, sms_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
 from .roles import get_one_role
@@ -23,10 +24,29 @@ template_env = Environment(loader=template_loader, autoescape=select_autoescape(
 
 
 async def login(payload: LoginUser) -> JSONResponse:
-    if (user := await User.find_one({"email": payload.email.lower()})) is None:
+    if settings.REGISTER_WITH_EMAIL:
+        if not (identifier := payload.email):
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_CREDENTIALS,
+                message_error="Email is required for login.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        user = await User.find_one({"email": identifier})
+        identifier_type = "e-mail address"
+    else:
+        if not (identifier := payload.phonenumber):
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_CREDENTIALS,
+                message_error="Phone number is required for login.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        user = await User.find_one({"phonenumber": identifier})
+        identifier_type = "phone number"
+
+    if user is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
-            message_error=f"This e-mail address '{payload.email}' is invalid or does not exist.",
+            message_error=f"This {identifier_type} '{identifier}' is invalid or does not exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -179,7 +199,7 @@ async def reset_password_completed(
     )
 
 
-async def request_create_account_with_send_email(background: BackgroundTasks, email: EmailStr):
+async def signup_with_email(background: BackgroundTasks, email: EmailStr):
     await check_if_email_exist(email=email.lower())
 
     activate_token = CustomAccessBearer.access_token(
@@ -213,7 +233,7 @@ async def request_create_account_with_send_email(background: BackgroundTasks, em
     )
 
 
-async def create_new_account_with_send_email(
+async def complete_registration_with_email(
     token: str,
     user_data: UserBaseSchema,
     background: BackgroundTasks,
@@ -245,26 +265,95 @@ async def check_user_attribute(key: str, value: str, in_attributes: Optional[boo
     return JSONResponse(status_code=status.HTTP_200_OK, content={"exists": can})
 
 
-async def register_user(background: BackgroundTasks, payload: PhonenumberModel):
+async def send_otp(user: User, background: BackgroundTasks):
+    otp_secret = otp_service.generate_key()
+    otp_code = otp_service.generate_otp_instance(otp_secret).now()
+    recipient = user.phonenumber.replace("+", "")
+
+    new_attributes = user.attributes.copy() if user.attributes else {}
+    new_attributes["otp_secret"] = otp_secret
+    new_attributes["otp_created_at"] = datetime.now(tz=UTC)
+
+    template = template_env.get_template(name="sms_send_otp.txt")
+    message = template.render(otp_code=otp_code, service_name=sms_config.SMS_SENDER)
+    await sms_service.send_sms(background, recipient, message)
+    await user.set({"attributes": new_attributes})
+
+
+async def signup_with_phonenumber(background: BackgroundTasks, payload: RequestChangePassword):
     if await User.find_one({"phonenumber": payload.phonenumber}).exists():
         raise CustomHTTException(
             code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
-            message_error=f"This phone number '{payload.phonenumber}' is invalid or does not exist.",
+            message_error=f"This phone number '{payload.phonenumber}' is already taken.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    otp_secret = otp_service.generate_key()
-    otp_code = otp_service.generate_otp_instance(otp_secret).now()
-    recipient = payload.phonenumber.replace("+", "")
+    user_data_dict = payload.model_copy(update={"password": password_hash(payload.password)})
+    temp_user = User(**user_data_dict.model_dump(), attributes={})
 
-    new_user = User(**payload.model_dump())
-    new_user.attributes = {"otp_secret": otp_secret}
+    try:
+        await send_otp(temp_user, background)
+    except HTTPException as exc:
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_CREATE_FAILED,
+            message_error="Failed to send SMS OTP. Please try again.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        ) from exc
 
-    message = (f"Bonjour, utilsez ce code OTP: {otp_code} pour vous connecter à votre compte {sms_config.SMS_SENDER}.",)
-    await sms_service.send_sms(background, recipient, message)
+    await temp_user.create()
 
-    await new_user.create()
     return JSONResponse(
         status_code=status.HTTP_200_OK,
-        content={"message": f"We had sent a connection code to the phone number: {payload.phonenumber}"},
+        content={"message": f"We had sent a connection code to the phone number: '{payload.phonenumber}'"},
+    )
+
+
+async def verify_otp(payload: VerifyOTP):
+    if (user := await User.find_one({"phonenumber": payload.phonenumber})) is None:
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_PHONENUMBER_NOT_FOUND,
+            message_error=f"User phonenumber '{payload.phonenumber}' not found",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    otp_created_at = user.attributes.get("otp_created_at")
+    if otp_created_at and datetime.now(tz=UTC) - otp_created_at > timedelta(minutes=5):
+        raise CustomHTTException(
+            code_error=AuthErrorCode.AUTH_OTP_EXPIRED,
+            message_error="OTP has expired. Please request a new one.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(payload.otp_code):
+        raise CustomHTTException(
+            code_error=AuthErrorCode.AUTH_OTP_NOT_VALID,
+            message_error=f"Code OTP '{payload.otp_code}' invalid",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    role = await get_one_role(role_id=PydanticObjectId(user.role))
+    user_data = user.model_dump(by_alias=True, exclude={"password", "attributes", "is_primary"})
+
+    response_data = {
+        "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
+        "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
+        "user": user_data,
+    }
+    response_data["user"]["role"] = role.model_dump(by_alias=True)
+    return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
+
+
+async def resend_otp(background: BackgroundTasks, payload: PhonenumberModel):
+    if (user := await User.find_one({"phonenumber": payload.phonenumber})) is None:
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_NOT_FOUND,
+            message_error=f"User with phone number '{payload.phonenumber}' not found",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    await send_otp(user, background)
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={"message": f"We have sent a new connection code to the phone number: {payload.phonenumber}"},
     )

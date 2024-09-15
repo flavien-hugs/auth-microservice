@@ -1,26 +1,61 @@
-from typing import Set, Optional
+from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security
-from starlette import status
+from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security, status
 
-from src.config import enable_endpoint
+from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
-from src.schemas import ChangePassword, LoginUser, RequestChangePassword, UserBaseSchema, PhonenumberModel
+from src.schemas import (
+    ChangePassword,
+    EmailModelMixin,
+    LoginUser,
+    PhonenumberModel,
+    RequestChangePassword,
+    UserBaseSchema,
+    VerifyOTP,
+)
 from src.services import auth
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
 
 
-@auth_router.post("/register", summary="Register with phone number", status_code=status.HTTP_201_CREATED)
-async def register(bg: BackgroundTasks, payload: PhonenumberModel = Body(...)):
-    return await auth.register_user(bg, payload)
+@auth_router.post("/signup", summary="Signup", status_code=status.HTTP_201_CREATED)
+async def register(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
+    if settings.REGISTER_WITH_EMAIL:
+        return await auth.signup_with_email(background=background, email=payload.email)
+    else:
+        return await auth.signup_with_phonenumber(background, payload)
 
 
-@auth_router.post("/login", summary="Login User", status_code=status.HTTP_200_OK)
+if bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post(
+        "/complete-registration",
+        response_model=User,
+        response_model_exclude={"password"},
+        status_code=status.HTTP_200_OK,
+        summary="Complete registration if you are registered with an e-mail address.",
+        description="Complete registration if you are registered with an e-mail address.",
+    )
+    async def complete_registration(token: str, background: BackgroundTasks, payload: UserBaseSchema = Body(...)):
+        return await auth.complete_registration_with_email(token=token, user_data=payload, background=background)
+
+
+@auth_router.post("/login", summary="Login", status_code=status.HTTP_200_OK)
 async def login(payload: LoginUser = Body(...)):
     return await auth.login(payload)
+
+
+if not bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post("/verify-otp", summary="Verify OTP Code", status_code=status.HTTP_200_OK)
+    async def verif_otp_code(payload: VerifyOTP = Body(...)):
+        return await auth.verify_otp(payload)
+
+    @auth_router.post("/resend-otp", summary="Resend OTP Code", status_code=status.HTTP_200_OK)
+    async def resend_otp_code(bg: BackgroundTasks, payload: PhonenumberModel = Body(...)):
+        return await auth.resend_otp(bg, payload)
 
 
 @auth_router.get(
@@ -57,7 +92,7 @@ async def change_password(id: str, payload: ChangePassword = Body(...)):
 
 
 @auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
-async def request_password_reset(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
+async def request_password_reset(background: BackgroundTasks, payload: EmailModelMixin = Body(...)):
     return await auth.request_password_reset(background=background, email=payload.email)
 
 
@@ -68,32 +103,6 @@ async def reset_password_completed(
     payload: ChangePassword = Body(...),
 ):
     return await auth.reset_password_completed(background=background, reset_passwoord_token=token, new_password=payload)
-
-
-if bool(enable_endpoint.SHOW_REQUEST_CREATE_ACCOUNT_ENDPOINT):
-
-    @auth_router.post(
-        "/request-create-account",
-        status_code=status.HTTP_201_CREATED,
-        summary="Request create account",
-        description="Request create account and receive e-mail to active account.",
-    )
-    async def request_create_account(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
-        return await auth.request_create_account_with_send_email(background=background, email=payload.email)
-
-
-if bool(enable_endpoint.SHOW_CREATE_NEW_ACCOUNT_ENDPOINT):
-
-    @auth_router.post(
-        "/create-new-account",
-        response_model=User,
-        response_model_exclude={"password"},
-        status_code=status.HTTP_200_OK,
-        summary="Create new account",
-        description="Create new account and receive e-mail to active account.",
-    )
-    async def create_new_account(token: str, background: BackgroundTasks, payload: UserBaseSchema = Body(...)):
-        return await auth.create_new_account_with_send_email(token=token, user_data=payload, background=background)
 
 
 if bool(enable_endpoint.SHOW_CHECK_USER_ATTRIBUTE_ENDPOINT):

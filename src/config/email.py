@@ -1,5 +1,5 @@
 from functools import lru_cache
-
+from typing import Optional
 from pydantic import EmailStr, Field, PositiveInt
 from pydantic_settings import BaseSettings
 
@@ -11,8 +11,8 @@ class EmailSettings(BaseSettings):
     EMAIL_FROM_TO: str = Field(..., alias="EMAIL_FROM_TO")
     EMAIL_PASSWORD: str = Field(..., alias="EMAIL_PASSWORD")
     EMAIL_SENDER_ADDRESS: EmailStr = Field(..., alias="EMAIL_SENDER_ADDRESS")
-    ACTIVATE_LINK_IFESPAN_MINUTE: PositiveInt = Field(default=5, alias="ACTIVATE_LINK_IFESPAN_MINUTE")
-    RESET_PASSWORD_LIFESPAN_MINUTE: PositiveInt = Field(default=5, alias="RESET_PASSWORD_LIFESPAN_MINUTE")
+    ACTIVATE_LINK_IFESPAN_MINUTE: Optional[PositiveInt] = Field(default=5, alias="ACTIVATE_LINK_IFESPAN_MINUTE")
+    RESET_PASSWORD_LIFESPAN_MINUTE: Optional[PositiveInt] = Field(default=5, alias="RESET_PASSWORD_LIFESPAN_MINUTE")
 
 
 @lru_cache
