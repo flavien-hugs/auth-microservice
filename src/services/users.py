@@ -49,7 +49,7 @@ async def create_first_user(user_data: CreateUser) -> User:
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     await check_if_email_exist(email=user_data.email.lower())
-    user_dict = user_data.model_copy(update={"role": role.id})
+    user_dict = user_data.model_copy(update={"role": role.id, "password": password_hash(user_data.password)})
     new_user = await User(**user_dict.model_dump()).create()
     return new_user
 
