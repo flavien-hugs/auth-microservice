@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone, UTC
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from beanie import PydanticObjectId
@@ -12,7 +12,7 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.config import email_settings, settings, sms_config
 from src.middleware.auth import CustomAccessBearer
 from src.models import User
-from src.schemas import ChangePassword, LoginUser, PhonenumberModel, UserBaseSchema, VerifyOTP, RequestChangePassword
+from src.schemas import ChangePassword, LoginUser, PhonenumberModel, RequestChangePassword, UserBaseSchema, VerifyOTP
 from src.shared import blacklist_token, mail_service, otp_service, sms_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
@@ -272,7 +272,7 @@ async def send_otp(user: User, background: BackgroundTasks):
 
     new_attributes = user.attributes.copy() if user.attributes else {}
     new_attributes["otp_secret"] = otp_secret
-    new_attributes["otp_created_at"] = datetime.now(tz=UTC)
+    new_attributes["otp_created_at"] = datetime.now(timezone.utc).timestamp()
 
     template = template_env.get_template(name="sms_send_otp.txt")
     message = template.render(otp_code=otp_code, service_name=sms_config.SMS_SENDER)
@@ -316,13 +316,15 @@ async def verify_otp(payload: VerifyOTP):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    otp_created_at = user.attributes.get("otp_created_at")
-    if otp_created_at and datetime.now(tz=UTC) - otp_created_at > timedelta(minutes=5):
-        raise CustomHTTException(
-            code_error=AuthErrorCode.AUTH_OTP_EXPIRED,
-            message_error="OTP has expired. Please request a new one.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    if otp_created_at := user.attributes.get("otp_created_at"):
+        current_timestamp = datetime.now(timezone.utc).timestamp()
+        time_elapsed = current_timestamp - otp_created_at
+        if time_elapsed > timedelta(minutes=5).total_seconds():
+            raise CustomHTTException(
+                code_error=AuthErrorCode.AUTH_OTP_EXPIRED,
+                message_error="OTP has expired. Please request a new one.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(payload.otp_code):
         raise CustomHTTException(
@@ -331,6 +333,7 @@ async def verify_otp(payload: VerifyOTP):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    await user.set({"is_active": True})
     role = await get_one_role(role_id=PydanticObjectId(user.role))
     user_data = user.model_dump(by_alias=True, exclude={"password", "attributes", "is_primary"})
 

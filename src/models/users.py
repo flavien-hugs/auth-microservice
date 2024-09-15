@@ -11,7 +11,7 @@ from .mixins import DatetimeTimestamp
 
 
 class User(CreateUser, DatetimeTimestamp, Document):
-    is_active: Optional[StrictBool] = True
+    is_active: Optional[StrictBool] = False
     is_primary: Optional[StrictBool] = False
 
     class Settings:

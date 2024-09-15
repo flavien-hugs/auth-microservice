@@ -50,7 +50,7 @@ async def create_first_user(user_data: CreateUser) -> User:
         )
     await check_if_email_exist(email=user_data.email.lower())
     user_dict = user_data.model_copy(update={"role": role.id, "password": password_hash(user_data.password)})
-    new_user = await User(**user_dict.model_dump()).create()
+    new_user = await User(is_active=True, **user_dict.model_dump()).create()
     return new_user
 
 
@@ -71,7 +71,7 @@ async def create_admin_user():
         return
     else:
         password = os.getenv("DEFAULT_ADMIN_PASSWORD")
-        user = User(**paylaod, role=role.id, is_primary=True)
+        user = User(is_active=True, role=role.id, is_primary=True, **paylaod)
         user.password = password_hash(password)
         await user.create()
         logger.info("--> Create first user successfully !")
