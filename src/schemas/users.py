@@ -2,12 +2,7 @@ import re
 from typing import Any, Dict, Optional
 
 from beanie import PydanticObjectId
-from pydantic import BaseModel, EmailStr, Field, StrictStr, field_validator, model_validator
-from starlette import status
-
-from src.common.helpers.exceptions import CustomHTTException
-from src.config import settings
-from src.shared.error_codes import AuthErrorCode
+from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
 
 
 class PhonenumberModel(BaseModel):
@@ -22,18 +17,6 @@ class PhonenumberModel(BaseModel):
 
 class SignupBaseModel(PhonenumberModel):
     password: Optional[str] = None
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_password(cls, values: dict):
-        password = values.get("password")
-        if len(password) > settings.PASSWORD_MIN_LENGTH:
-            return values
-        raise CustomHTTException(
-            code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
-            message_error="The password must be 6 characters or more.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
 
 
 class UserBaseSchema(SignupBaseModel):
