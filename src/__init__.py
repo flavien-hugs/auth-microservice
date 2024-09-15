@@ -36,8 +36,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await load_app_description(mongodb_client=app.mongo_db_client)
     await load_permissions(mongodb_client=app.mongo_db_client)
 
-    await roles.create_first_role()
-    await users.create_first_user()
+    await roles.create_admin_role()
+    await users.create_admin_user()
 
     blacklist_token.init_blacklist_token_file()
 
@@ -46,15 +46,25 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 
 app: FastAPI = FastAPI(
-    debug=True,
     lifespan=lifespan,
-    title=f"U. INC: {settings.APP_NAME.upper()} API Service",
+    title=f"UNS: {settings.APP_NAME.upper()} API Service",
     description=f"{settings.APP_TITLE}",
     docs_url="/docs",
     openapi_url="/openapi.json",
     redirect_slashes=False,
     root_path_in_servers=False,
 )
+
+
+@app.get("/", include_in_schema=False)
+async def read_root():
+    return RedirectResponse(url="/docs")
+
+
+@app.get("/@ping", tags=["DEFAULT"], summary="Check if server is available")
+async def ping():
+    return {"message": "pong !"}
+
 
 app.include_router(auth_router)
 app.include_router(user_router)
@@ -84,13 +94,3 @@ async def add_version_header(request: Request, call_next):
     response = await call_next(request)
     response.headers["X-Version"] = os.environ.get("API_VERSION", "v.0.1")
     return response
-
-
-@app.get("/", include_in_schema=False)
-async def read_root():
-    return RedirectResponse(url="/docs")
-
-
-@app.get("/@ping", tags=["DEFAULT"], summary="Check if server is available")
-async def ping():
-    return {"message": "pong !"}

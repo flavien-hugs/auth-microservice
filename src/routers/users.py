@@ -1,7 +1,7 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, Query, Security, status
+from fastapi import APIRouter, Request, Body, Depends, Query, Security, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
@@ -18,44 +18,26 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
     "",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-create-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-user"})),
     ],
     response_model=User,
     response_model_exclude={"password", "is_primary"},
     status_code=status.HTTP_201_CREATED,
     summary="Create new user",
 )
-async def create_user(payload: CreateUser = Body(...)):
-    """
-    Create a new user in the system.
-
-    This endpoint allows an authorized user with the `can create user` permission to create a new user.
-    The new user's details are provided in the request body.
-
-    Args:
-    - payload (CreateUser): The data required to create a new user, including username, email, and other attributes.
-
-    Returns:
-    - User: The newly created user object.
-
-    Example of use:
-
-    ```bash
-
-    curl -X POST "http://yourapi.com/users"
-    -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-    -H "Content-Type: application/json"
-    -d '{
-        "email": "newuser@example.com",
-        "fullanme": "newuser",
-        "role": "5eb7cf5a86d9755df3a6c593",
-        "attributes": {"key": "value"},
-        "password": "securepassword",
-    }'
-
-    ```
-    """
-    return await users.create_user(payload)
+@user_router.post(
+    "/add",
+    response_model=User,
+    response_model_exclude={"password", "is_primary"},
+    status_code=status.HTTP_201_CREATED,
+    summary="Add new user",
+    include_in_schema=False,
+)
+async def create_user(request: Request, payload: CreateUser = Body(...)):
+    if request.url.path.endswith("/add"):
+        return await users.create_first_user(payload)
+    else:
+        return await users.create_user(payload)
 
 
 @user_router.get(
@@ -63,7 +45,7 @@ async def create_user(payload: CreateUser = Body(...)):
     response_model=customize_page(User),
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
     summary="Get all users",
     status_code=status.HTTP_200_OK,
@@ -79,15 +61,40 @@ async def listing_users(
     # search = {"is_primary": is_primary}
     search = {"is_primary": False, "is_active": is_active}
     if query:
-        search["$text"] = {"$search": query}
+        search["$or"] = [
+            {"email": {"$regex": query, "$options": "i"}},
+            {"fullname": {"$regex": query, "$options": "i"}},
+            {
+                "$expr": {
+                    "$gt": [
+                        {
+                            "$indexOfArray": [
+                                {
+                                    "$map": {
+                                        "input": {"$objectToArray": "$attributes"},
+                                        "as": "attr",
+                                        "in": {"$toLower": "$$attr.v"},
+                                    }
+                                },
+                                {"$toLower": query},
+                            ]
+                        },
+                        -1,
+                    ]
+                }
+            },
+        ]
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
-    users = await User.find(search).sort([("created_at", sorted)]).to_list()
+    users = await User.find(search, sort=[("created_at", sorted)]).to_list()
 
     return paginate(
         [
             {
-                **user.model_dump(by_alias=True, exclude={"password", "is_primary"}),
+                **user.model_dump(
+                    by_alias=True,
+                    exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+                ),
                 "extra": {"role_info": await roles.get_one_role(role_id=PydanticObjectId(user.role))},
             }
             for user in users
@@ -100,9 +107,9 @@ async def listing_users(
     response_model=UserOut,
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
-    response_model_exclude={"password", "is_primary"},
+    response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Get single user",
     status_code=status.HTTP_200_OK,
 )
@@ -115,9 +122,9 @@ async def get_user(id: PydanticObjectId):
     response_model=User,
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-update-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
-    response_model_exclude={"password", "is_primary"},
+    response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Update user information",
     status_code=status.HTTP_200_OK,
 )
@@ -129,7 +136,7 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
     "/{id}",
     dependencies=[
         Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-user", "can-delete-user"})),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-user"})),
     ],
     summary="Delete one user",
     status_code=status.HTTP_200_OK,

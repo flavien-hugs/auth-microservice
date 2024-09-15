@@ -44,7 +44,7 @@ class MailServiceHandler:
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
 
-    async def send_email(self, receiver_email: list[EmailStr], subject: str, body: str):
+    async def __call__(self, receiver_email: list[EmailStr], subject: str, body: str):
         message = MIMEMultipart()
 
         message["From"] = env_email.EMAIL_FROM_TO
@@ -67,7 +67,7 @@ class MailServiceHandler:
     def send_email_background(
         self, background_task: BackgroundTasks, receiver_email: list[EmailStr], subject: str, body: str
     ):
-        background_task.add_task(self.send_email, receiver_email, subject, body)
+        background_task.add_task(self.__call__, receiver_email, subject, body)
         logger.info("Email scheduled to be sent in the background.")
 
 

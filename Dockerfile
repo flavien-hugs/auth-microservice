@@ -54,11 +54,21 @@ RUN --mount=type=cache,target=/root/.cache \
 # The runtime image, used to just run the code provided its virtual environment
 FROM python-base as runtime
 
+ARG UID=10001
+ARG GID=10001
+
 COPY --from=builder-base ${POETRY_HOME} ${POETRY_HOME}
 COPY --from=builder-base ${VIRTUAL_ENV} ${VIRTUAL_ENV}
 COPY --from=builder-base /app/src /app/src
 COPY --from=builder-base /app/appdesc.yml /app/appdesc.yml
 COPY --from=builder-base /app/pyproject.toml /app/pyproject.toml
 COPY --from=builder-base /app/poetry.lock /app/poetry.lock
+
+RUN addgroup --gid $GID appuser && \
+    adduser --uid $UID --gid $GID --disabled-password --gecos "" appuser && \
+    chmod 755 -R /app && \
+    chown appuser:appuser -R /app
+
+USER appuser
 
 WORKDIR /app

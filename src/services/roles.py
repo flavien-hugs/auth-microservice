@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, UTC
 from typing import Optional, Sequence, Set
 
 from beanie import PydanticObjectId
@@ -13,7 +14,6 @@ from src.models import Role, User
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
 from src.shared.utils import SortEnum
-
 from .perms import get_all_permissions
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -32,7 +32,7 @@ async def create_role(role: RoleModel) -> Role:
     return new_role
 
 
-async def create_first_role():
+async def create_admin_role():
     paylaod = {"name": os.getenv("DEFAULT_ADMIN_ROLE"), "description": os.getenv("DEFAULT_ADMIN_ROLE_DESCRIPTION")}
 
     slug_value = slugify(paylaod["name"])
@@ -77,7 +77,11 @@ async def get_one_role(role_id: PydanticObjectId) -> Role:
 async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role:
     role = await get_one_role(role_id=role_id)
     result = await role.set(
-        {**update_role.model_dump(exclude_none=True, exclude_unset=True), "slug": slugify(update_role.name)}
+        {
+            **update_role.model_dump(exclude_none=True, exclude_unset=True),
+            "slug": slugify(update_role.name),
+            "updated_at": datetime.now(tz=UTC),
+        }
     )
     return result
 
