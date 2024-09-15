@@ -13,7 +13,7 @@ class AuthBaseConfig(BaseSettings):
     FULLNAME_MIN_LENGTH: Optional[PositiveInt] = Field(default=4, alias="FULLNAME_MIN_LENGTH")
     APP_ACCESS_LOG: Optional[bool] = Field(default=True, alias="APP_ACCESS_LOG")
     APP_DEFAULT_PORT: Optional[PositiveInt] = Field(default=9077, alias="APP_DEFAULT_PORT")
-    PASSWORD_MIN_LENGTH: Optional[PositiveInt] = Field(default=6, alias="PASSWORD_MIN_LENGTH")
+    PASSWORD_MIN_LENGTH: Optional[PositiveInt] = Field(default=3, alias="PASSWORD_MIN_LENGTH")
     ENABLE_OTP_CODE: Optional[bool] = Field(default=True, alias="ENABLE_OTP_CODE")
     OTP_CODE_DIGIT_LENGTH: Optional[PositiveInt] = Field(default=4, alias="OTP_CODE_DIGIT_LENGTH")
     REGISTER_WITH_EMAIL: Optional[bool] = Field(default=False, alias="REGISTER_WITH_EMAIL")
