@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings
 class AuthBaseConfig(BaseSettings):
     # APP CONFIG
     APP_NAME: Optional[str] = Field(default="Auth", alias="APP_NAME")
-    APP_TITLE: Optional[str] = Field(default="Authentication and user management system", alias="APP_TITLE")
+    APP_TITLE: Optional[str] = Field(default="User management and Auth", alias="APP_TITLE")
     APP_HOSTNAME: Optional[str] = Field(default="0.0.0.0", alias="APP_HOSTNAME")
     APP_RELOAD: Optional[bool] = Field(default=True, alias="APP_RELOAD")
     FULLNAME_MIN_LENGTH: Optional[PositiveInt] = Field(default=4, alias="FULLNAME_MIN_LENGTH")
