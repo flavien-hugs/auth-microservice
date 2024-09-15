@@ -47,10 +47,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 app: FastAPI = FastAPI(
     lifespan=lifespan,
-    title=f"UNS: {settings.APP_NAME.upper()} API Service",
-    description=f"{settings.APP_TITLE}",
-    docs_url="/docs",
-    openapi_url="/openapi.json",
+    title=f"{settings.APP_TITLE} API Service",
+    docs_url="/auth/docs",
+    openapi_url="/auth/openapi.json",
     redirect_slashes=False,
     root_path_in_servers=False,
 )
@@ -58,7 +57,7 @@ app: FastAPI = FastAPI(
 
 @app.get("/", include_in_schema=False)
 async def read_root():
-    return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/auth/docs")
 
 
 @app.get("/@ping", tags=["DEFAULT"], summary="Check if server is available")
