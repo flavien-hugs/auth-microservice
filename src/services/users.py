@@ -12,7 +12,7 @@ from slugify import slugify
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
-from src.shared.error_codes import UserErrorCode
+from src.shared.error_codes import UserErrorCode, RoleErrorCode
 from src.shared.utils import password_hash
 from .roles import get_one_role
 
@@ -37,6 +37,20 @@ async def create_user(user_data: CreateUser) -> User:
     await get_one_role(role_id=user_data.role)
     await check_if_email_exist(email=user_data.email.lower())
     new_user = await User(**user_data.model_dump()).create()
+    return new_user
+
+
+async def create_first_user(user_data: CreateUser) -> User:
+    default_role = os.getenv("DEFAULT_ADMIN_ROLE")
+    if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
+        raise CustomHTTException(
+            code_error=RoleErrorCode.ROLE_NOT_FOUND,
+            message_error=f"Role with '{role.id}' not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    await check_if_email_exist(email=user_data.email.lower())
+    user_dict = user_data.model_copy(update={"role": role.id})
+    new_user = await User(**user_dict.model_dump()).create()
     return new_user
 
 

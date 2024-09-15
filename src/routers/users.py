@@ -34,7 +34,10 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
     include_in_schema=False,
 )
 async def create_user(request: Request, payload: CreateUser = Body(...)):
-    return await users.create_user(payload)
+    if request.url.path.endswith("/add"):
+        return await users.create_first_user(payload)
+    else:
+        return await users.create_user(payload)
 
 
 @user_router.get(
