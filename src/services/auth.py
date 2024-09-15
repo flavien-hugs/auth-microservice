@@ -290,17 +290,17 @@ async def signup_with_phonenumber(background: BackgroundTasks, payload: RequestC
 
     user_data_dict = payload.model_copy(update={"password": password_hash(payload.password)})
     temp_user = User(**user_data_dict.model_dump(), attributes={})
+    new_user = await temp_user.create()
 
     try:
         await send_otp(temp_user, background)
     except HTTPException as exc:
+        await new_user.delete()
         raise CustomHTTException(
             code_error=UserErrorCode.USER_CREATE_FAILED,
             message_error="Failed to send SMS OTP. Please try again.",
             status_code=status.HTTP_400_BAD_REQUEST,
         ) from exc
-
-    await temp_user.create()
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
