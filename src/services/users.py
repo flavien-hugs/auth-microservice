@@ -55,7 +55,11 @@ async def create_first_user(user_data: CreateUser) -> User:
 
 
 async def create_admin_user():
-    paylaod = {"email": os.getenv("DEFAULT_ADMIN_EMAIL"), "fullname": os.getenv("DEFAULT_ADMIN_FULLNAME")}
+    paylaod = {
+        "email": os.getenv("DEFAULT_ADMIN_EMAIL"),
+        "phonenumber": os.getenv("DEFAULT_ADMIN_PHONE"),
+        "fullname": os.getenv("DEFAULT_ADMIN_FULLNAME"),
+    }
 
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
