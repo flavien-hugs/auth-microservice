@@ -1,5 +1,12 @@
 version: "3.9"
 
+x-logging: &logging
+  driver: "json-file"
+  options:
+    max-size: "50m"
+    max-file: "3"
+
+
 services:
     auth:
         build:
@@ -15,6 +22,7 @@ services:
             - "8018:${APP_DEFAULT_PORT}"
         env_file:
             - ./dotenv/app.env
+        logging: *logging
 
     mongo:
         image: mongo:jammy
@@ -29,6 +37,7 @@ services:
             - "27039:${MONGO_PORT}"
         volumes:
             - auth_data:/data/db
+        logging: *logging
 
 volumes:
     auth_data:
