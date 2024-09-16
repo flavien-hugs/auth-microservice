@@ -54,17 +54,25 @@ def mock_services_roles():
 
 
 @pytest.fixture
+def mock_custom_access_bearer():
+    with mock.patch("src.middleware.CustomAccessBearer") as mock_call:
+        mock_call.verify_access_token = mock.AsyncMock(return_value=None)
+        mock_call.check_permissions = mock.AsyncMock(return_value=None)
+        yield mock_call
+
+
+@pytest.fixture
 def mock_authorized_http_bearer():
-    with mock.patch("src.middleware.AuthorizedHTTPBearer.__call__") as mock_auth:
-        mock_auth.return_value = "mocked_access_token"
-        yield mock_auth
+    with mock.patch("src.middleware.CustomAccessBearer.verify_access_token") as mock_verify:
+        mock_verify.return_value = None
+        yield mock_verify
 
 
 @pytest.fixture
 def mock_check_permissions_handler():
-    with mock.patch("src.middleware.CheckPermissionsHandler.__call__") as mock_perm:
-        mock_perm.return_value = True
-        yield mock_perm
+    with mock.patch("src.routers.users.CheckPermissionsHandler.__call__") as mock_call:
+        mock_call.return_value = None
+        yield mock_call
 
 
 @pytest.fixture(autouse=True)
@@ -138,5 +146,5 @@ def fake_user_data(fake_role_collection, fake_data):
 
 @pytest_asyncio.fixture()
 async def fake_user_collection(fixture_models, fake_user_data):
-    result = await fixture_models.User(**fake_user_data).create()
+    result = await fixture_models.User(is_active=True, is_primary=False, **fake_user_data).create()
     return result

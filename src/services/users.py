@@ -45,7 +45,7 @@ async def create_first_user(user_data: CreateUser) -> User:
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
         raise CustomHTTException(
             code_error=RoleErrorCode.ROLE_NOT_FOUND,
-            message_error=f"Role with '{role.id}' not found.",
+            message_error=f"Role with name '{default_role}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     await check_if_email_exist(email=user_data.email.lower())
@@ -106,7 +106,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
 
 
 async def delete_user(user_id: PydanticObjectId) -> None:
-    await User.get(document_id=PydanticObjectId(user_id)).delete()
+    await User.find_one({"_id": user_id}).delete()
 
 
 async def delete_many_users(user_ids: Sequence[PydanticObjectId]) -> None:

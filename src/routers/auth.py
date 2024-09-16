@@ -1,7 +1,7 @@
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, BackgroundTasks, Body, Query, Request, Security, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, status
 
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer
@@ -64,7 +64,7 @@ if not bool(settings.REGISTER_WITH_EMAIL):
 
 
 @auth_router.get(
-    "/logout", dependencies=[Security(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
+    "/logout", dependencies=[Depends(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
 )
 async def logout(request: Request):
     return await auth.logout(request)
@@ -76,7 +76,7 @@ async def logout(request: Request):
     status_code=status.HTTP_200_OK,
 )
 async def check_access(
-    token: str = Security(AuthorizedHTTPBearer),
+    token: str = Depends(AuthorizedHTTPBearer),
     permission: Set[str] = Query(..., title="Permission to check"),
 ):
     return await auth.check_access(token=token, permission=permission)

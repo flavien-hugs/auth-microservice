@@ -4,3 +4,4 @@ include =
 omit =
     */tests/*
     */src/common/*
+    */src/config/*

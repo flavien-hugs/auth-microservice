@@ -23,39 +23,40 @@ template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
 
 
-async def login(payload: LoginUser) -> JSONResponse:
-    if settings.REGISTER_WITH_EMAIL:
-        if not (identifier := payload.email):
-            raise CustomHTTException(
-                code_error=UserErrorCode.INVALID_CREDENTIALS,
-                message_error="Email is required for login.",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-        user = await User.find_one({"email": identifier})
-        identifier_type = "e-mail address"
-    else:
-        if not (identifier := payload.phonenumber):
-            raise CustomHTTException(
-                code_error=UserErrorCode.INVALID_CREDENTIALS,
-                message_error="Phone number is required for login.",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-        user = await User.find_one({"phonenumber": identifier})
-        identifier_type = "phone number"
+async def find_user_by_identifier(identifier: str, is_email: bool) -> Optional[User]:
+    search_field = "email" if is_email else "phonenumber"
+    return await User.find_one({search_field: identifier})
 
+
+async def validate_user_status(user: User) -> None:
     if user is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
-            message_error=f"This {identifier_type} '{identifier}' is invalid or does not exist.",
+            message_error="User does not exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-
     if not user.is_active:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error="Your account is not active. Please contact the administrator to activate your account.",
             status_code=status.HTTP_403_FORBIDDEN,
         )
+
+
+async def login(payload: LoginUser) -> JSONResponse:
+    is_email = settings.REGISTER_WITH_EMAIL
+    identifier: Optional[str] = payload.email if is_email else payload.phonenumber
+
+    if not identifier:
+        field = "email" if is_email else "phone number"
+        raise CustomHTTException(
+            code_error=AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+            message_error=f"{field.capitalize()} is required for login.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    user = await find_user_by_identifier(identifier, is_email)
+    await validate_user_status(user)
 
     if not verify_password(payload.password, user.password):
         raise CustomHTTException(
