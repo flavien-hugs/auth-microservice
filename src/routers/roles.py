@@ -22,8 +22,6 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
             Depends(AuthorizedHTTPBearer),
             Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-role"})),
         ]
-        if settings.LIST_ROLES_ENDPOINT_SECURITY_ENABLED
-        else []
     ),
     response_model=Role,
     summary="Create role",
@@ -36,10 +34,14 @@ async def create_role(payload: RoleModel = Body(...)):
 @role_router.get(
     "",
     response_model=customize_page(Role),
-    dependencies=[
-        Depends(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
-    ],
+    dependencies=(
+        [
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
+        ]
+        if settings.LIST_ROLES_ENDPOINT_SECURITY_ENABLED
+        else []
+    ),
     summary="Get all roles",
     status_code=status.HTTP_200_OK,
 )
