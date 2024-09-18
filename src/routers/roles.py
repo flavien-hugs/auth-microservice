@@ -5,7 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.config import enable_endpoint
+from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
@@ -17,10 +17,14 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 
 @role_router.post(
     "",
-    dependencies=[
-        Depends(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-role"})),
-    ],
+    dependencies=(
+        [
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-role"})),
+        ]
+        if settings.LIST_ROLES_ENDPOINT_SECURITY_ENABLED
+        else []
+    ),
     response_model=Role,
     summary="Create role",
     status_code=status.HTTP_201_CREATED,
