@@ -1,5 +1,6 @@
 import logging
 import os
+from datetime import datetime, UTC
 from typing import Sequence
 
 from beanie import PydanticObjectId
@@ -11,9 +12,8 @@ from slugify import slugify
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
-from src.shared.error_codes import UserErrorCode
+from src.shared.error_codes import UserErrorCode, RoleErrorCode
 from src.shared.utils import password_hash
-
 from .roles import get_one_role
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -34,24 +34,32 @@ async def check_if_email_exist(email: EmailStr) -> bool:
 
 
 async def create_user(user_data: CreateUser) -> User:
-    """
-    Créer un nouvel utilisateur
-
-    :param user_data: Les informations de l'utilisateur à créer
-    :type user_data: CreateUser
-    :return: Le nouvel utilisateur créé
-    :rtype: User
-    """
     await get_one_role(role_id=user_data.role)
     await check_if_email_exist(email=user_data.email.lower())
-
-    user_data_dict = user_data.model_copy(update={"password": password_hash(user_data.password)})
-    new_user = await User(**user_data_dict.model_dump()).create()
+    new_user = await User(**user_data.model_dump()).create()
     return new_user
 
 
-async def create_first_user():
-    paylaod = {"email": os.getenv("DEFAULT_ADMIN_EMAIL"), "fullname": os.getenv("DEFAULT_ADMIN_FULLNAME")}
+async def create_first_user(user_data: CreateUser) -> User:
+    default_role = os.getenv("DEFAULT_ADMIN_ROLE")
+    if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
+        raise CustomHTTException(
+            code_error=RoleErrorCode.ROLE_NOT_FOUND,
+            message_error=f"Role with name '{default_role}' not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    await check_if_email_exist(email=user_data.email.lower())
+    user_dict = user_data.model_copy(update={"role": role.id, "password": password_hash(user_data.password)})
+    new_user = await User(is_active=True, **user_dict.model_dump()).create()
+    return new_user
+
+
+async def create_admin_user():
+    paylaod = {
+        "email": os.getenv("DEFAULT_ADMIN_EMAIL"),
+        "phonenumber": os.getenv("DEFAULT_ADMIN_PHONE"),
+        "fullname": os.getenv("DEFAULT_ADMIN_FULLNAME"),
+    }
 
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
@@ -63,19 +71,13 @@ async def create_first_user():
         return
     else:
         password = os.getenv("DEFAULT_ADMIN_PASSWORD")
-        user = User(**paylaod, role=role.id, is_primary=True)
+        user = User(is_active=True, role=role.id, is_primary=True, **paylaod)
         user.password = password_hash(password)
         await user.create()
         logger.info("--> Create first user successfully !")
 
 
 async def get_one_user(user_id: PydanticObjectId):
-    """
-    :param user_id:
-    :type user_id:
-    :return:
-    :rtype:
-    """
     if (user := await User.get(document_id=PydanticObjectId(user_id))) is None:
         raise CustomHTTException(
             code_error=UserErrorCode.USER_NOT_FOUND,
@@ -88,26 +90,23 @@ async def get_one_user(user_id: PydanticObjectId):
 
 
 async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
-    """
-
-    :param user_id:
-    :type user_id:
-    :param update_user:
-    :type update_user:
-    :return:
-    :rtype:
-    """
     if update_user.role:
         await get_one_role(role_id=PydanticObjectId(update_user.role))
-    user = await get_one_user(user_id=user_id)
-    await user.set({**update_user.model_dump(exclude_none=True, exclude_unset=True)})
 
-    role = await get_one_role(role_id=PydanticObjectId(user.role))
+    user = await get_one_user(user_id=user_id)
+    update_data = update_user.model_dump(exclude_none=True, exclude_unset=True)
+
+    if "attributes" in update_data:
+        update_data["attributes"] = {**user.attributes, **update_data["attributes"]}
+
+    updated_user_doc = await user.set({"updated_at": datetime.now(tz=UTC), **update_data})
+
+    role = await get_one_role(role_id=PydanticObjectId(updated_user_doc.role))
     return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
 
 
 async def delete_user(user_id: PydanticObjectId) -> None:
-    await User.get(document_id=PydanticObjectId(user_id)).delete()
+    await User.find_one({"_id": user_id}).delete()
 
 
 async def delete_many_users(user_ids: Sequence[PydanticObjectId]) -> None:

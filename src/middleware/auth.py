@@ -91,7 +91,7 @@ class CustomAccessBearer:
             decode_token = cls.decode_access_token(token)
             current_timestamp = datetime.now(timezone.utc).timestamp()
 
-            if decode_token["exp"] > current_timestamp:
+            if decode_token["subject"]["is_active"] is True and decode_token["exp"] > current_timestamp:
                 return True
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,

@@ -48,7 +48,7 @@ class GenerateOPTKey:
 
     @classmethod
     def generate_otp_instance(cls, key: str) -> pyotp.TOTP:
-        return pyotp.TOTP(key, interval=3000)
+        return pyotp.TOTP(key, digits=4, interval=3000)
 
     @classmethod
     def verify_opt_code(cls, secret_otp: str, verify_otp: str) -> bool:

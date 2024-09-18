@@ -39,14 +39,20 @@ class TestCustomAccessBearer:
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_success(self, mock_decode_access_token, mock_jwt_settings):
-        mock_decode_access_token.return_value = {"exp": datetime.now(timezone.utc).timestamp() + 600}
+        mock_decode_access_token.return_value = {
+            "subject": {"is_active": True},
+            "exp": datetime.now(timezone.utc).timestamp() + 600,
+        }
         result = await self.custom_access_token.verify_access_token("fake_access_token")
         assert result is True
 
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_expired(self, mock_decode_access_token, mock_jwt_settings):
-        mock_decode_access_token.return_value = {"exp": datetime.now(timezone.utc).timestamp() - 600}
+        mock_decode_access_token.return_value = {
+            "subject": {"is_active": False},
+            "exp": datetime.now(timezone.utc).timestamp() - 600,
+        }
         with pytest.raises(CustomHTTException) as exc_info:
             await self.custom_access_token.verify_access_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED

@@ -105,8 +105,7 @@ jobs:
         needs: [tests]
         runs-on: ubuntu-latest
         environment:
-            name: build
-
+            name: ${{ (github.ref == 'refs/heads/main' && 'latest') || (github.ref == 'refs/heads/preprod' && 'preprod') || 'dev' }}
         steps:
             - name: Checkout code
               uses: actions/checkout@v4

@@ -16,8 +16,8 @@ startapp: ## Run service
 pre-commit: ## Run pre-commit
 	pre-commit run --all-files
 
-.PHONY: run-up
-run-up: ## Docker run
+.PHONY: run
+run: ## Docker run
 	docker compose up
 
 .PHONY: logs
@@ -27,6 +27,14 @@ logs:	## View logs from one/all containers
 .PHONY: down
 down:	## Stop the services, remove containers and networks
 	docker compose down
+
+.PHONY: prune
+prune:	## Remove images, containers, networks and unused
+	docker system prune
+
+.PHONY: volume
+volume:	## Remove volumes unused
+	docker volume prune
 
 .PHONY: tests
 tests: ## Execute test

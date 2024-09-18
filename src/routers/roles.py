@@ -1,26 +1,28 @@
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, Query, Security, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
-from src.config import enable_endpoint
+from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
-from src.shared.utils import SortEnum, customize_page
+from src.shared.utils import customize_page, SortEnum
 
 role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 
 
 @role_router.post(
     "",
-    dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-create-role"})),
-    ],
+    dependencies=(
+        [
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-role"})),
+        ]
+    ),
     response_model=Role,
     summary="Create role",
     status_code=status.HTTP_201_CREATED,
@@ -32,10 +34,14 @@ async def create_role(payload: RoleModel = Body(...)):
 @role_router.get(
     "",
     response_model=customize_page(Role),
-    dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
-    ],
+    dependencies=(
+        [
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
+        ]
+        if settings.LIST_ROLES_ENDPOINT_SECURITY_ENABLED
+        else []
+    ),
     summary="Get all roles",
     status_code=status.HTTP_200_OK,
 )
@@ -55,8 +61,8 @@ async def listing_roles(
 @role_router.get(
     "/{id}",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role"})),
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
     ],
     summary="Get one roles",
     status_code=status.HTTP_200_OK,
@@ -68,8 +74,8 @@ async def ger_role(id: PydanticObjectId):
 @role_router.put(
     "/{id}",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-update-role"})),
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-role"})),
     ],
     summary="Update role",
     status_code=status.HTTP_200_OK,
@@ -81,8 +87,8 @@ async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
 @role_router.delete(
     "/{id}",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-delete-role"})),
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-role"})),
     ],
     summary="Delete role",
     status_code=status.HTTP_204_NO_CONTENT,
@@ -96,8 +102,8 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     @role_router.get(
         "/{id}/members",
         dependencies=[
-            Security(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"can-display-role", "can-display-user"})),
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
         ],
         response_model=customize_page(dict),
         summary="Get role members",
@@ -113,8 +119,8 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
 @role_router.patch(
     "/{id}/assign-permissions",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"can-update-role", "can-assign-permission-role"})),
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-assign-permission-role"})),
     ],
     response_model=Role,
     summary="Assign permissions to role",
