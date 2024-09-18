@@ -18,7 +18,7 @@ class AuthBaseConfig(BaseSettings):
     OTP_CODE_DIGIT_LENGTH: Optional[PositiveInt] = Field(default=4, alias="OTP_CODE_DIGIT_LENGTH")
     REGISTER_WITH_EMAIL: Optional[bool] = Field(default=False, alias="REGISTER_WITH_EMAIL")
     LIST_ROLES_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
-        default=True, alias="LIST_ROLES_ENDPOINT_SECURITY_ENABLED"
+        default=False, alias="LIST_ROLES_ENDPOINT_SECURITY_ENABLED"
     )
 
     # USER MODEL NAME
