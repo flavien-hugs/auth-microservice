@@ -1,7 +1,7 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Request, Body, Depends, Query, Security, status
+from fastapi import APIRouter, Body, Depends, Query, Request, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
@@ -9,7 +9,7 @@ from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
 from src.services import roles, users
-from src.shared.utils import SortEnum, customize_page
+from src.shared.utils import customize_page, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
@@ -17,7 +17,7 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 @user_router.post(
     "",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
+        Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-user"})),
     ],
     response_model=User,
@@ -44,7 +44,7 @@ async def create_user(request: Request, payload: CreateUser = Body(...)):
     "",
     response_model=customize_page(User),
     dependencies=[
-        Security(AuthorizedHTTPBearer),
+        Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
     summary="Get all users",
@@ -106,7 +106,7 @@ async def listing_users(
     "/{id}",
     response_model=UserOut,
     dependencies=[
-        Security(AuthorizedHTTPBearer),
+        Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
@@ -121,7 +121,7 @@ async def get_user(id: PydanticObjectId):
     "/{id}",
     response_model=User,
     dependencies=[
-        Security(AuthorizedHTTPBearer),
+        Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
@@ -135,11 +135,11 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
 @user_router.delete(
     "/{id}",
     dependencies=[
-        Security(AuthorizedHTTPBearer),
+        Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-user"})),
     ],
     summary="Delete one user",
-    status_code=status.HTTP_200_OK,
+    status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_user(id: PydanticObjectId):
     return await users.delete_user(user_id=PydanticObjectId(id))

@@ -75,6 +75,14 @@ async def get_one_role(role_id: PydanticObjectId) -> Role:
 
 async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role:
     role = await get_one_role(role_id=role_id)
+
+    if await Role.find_one({"_id": {"$ne": role_id}, "slug": slugify(update_role.name)}).exists():
+        raise CustomHTTException(
+            code_error=RoleErrorCode.ROLE_ALREADY_EXIST,
+            message_error=f"Role with name '{update_role.name}' already exists.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     result = await role.set(
         {
             **update_role.model_dump(exclude_none=True, exclude_unset=True),

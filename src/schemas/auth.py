@@ -96,6 +96,14 @@ class LoginUser(RequestChangePassword):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    @model_validator(mode="before")
+    @classmethod
+    def check_email_or_phonenumber(cls, values):
+        email, phonenumber = values.get("email"), values.get("phonenumber")
+        if not email and not phonenumber:
+            raise ValueError("Either email or phone number must be provided.")
+        return values
+
 
 class ManageAccount(BaseModel):
     is_active: StrictBool = True
