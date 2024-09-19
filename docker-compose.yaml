@@ -25,7 +25,7 @@ services:
         logging: *logging
 
     mongo:
-        image: mongo:jammy
+        image: mongo:7.0.12
         restart: always
         environment:
             MONGO_DB: "${MONGO_DB}"
@@ -39,5 +39,16 @@ services:
             - auth_data:/data/db
         logging: *logging
 
+    redis:
+        image: redis:7.4-alpine
+        restart: always
+        command: redis-server --loglevel ${REDIS_LOG_LEVEL:-"warning"}
+        volumes:
+            - redis_data:/data
+        env_file:
+            - ./dotenv/redis.env
+        logging: *logging
+
 volumes:
     auth_data:
+    redis_data:

@@ -35,6 +35,10 @@ class AuthBaseConfig(BaseSettings):
     MONGO_DB: str = Field(..., alias="MONGO_DB")
     MONGODB_URI: str = Field(..., alias="MONGODB_URI")
 
+    # REDIS CONFIG
+    CACHE_DB_URL: str = Field(default="redis://redis:6379/0", alias="CACHE_DB_URL")
+    EXPIRE_CACHE: Optional[PositiveInt] = Field(default=500, alias="EXPIRE_CACHE")
+
 
 @lru_cache
 def get_settings() -> AuthBaseConfig:

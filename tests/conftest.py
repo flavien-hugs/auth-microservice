@@ -1,8 +1,11 @@
+from typing import Any, Generator
 from unittest import mock
 
 import pytest
 import pytest_asyncio
 from beanie import init_beanie
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 from httpx import AsyncClient
 from mongomock_motor import AsyncMongoMockClient
 
@@ -16,6 +19,13 @@ def fake_data():
     return faker.Faker()
 
 
+@pytest.fixture(autouse=True)
+def mock_init_cache() -> Generator[Any, Any, None]:
+    FastAPICache.init(InMemoryBackend())
+    yield
+    FastAPICache.reset()
+
+
 @pytest.fixture()
 def fixture_models():
     from src import models
@@ -23,7 +33,7 @@ def fixture_models():
     return models
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def mock_app_instance():
     from src import app as mock_app
 

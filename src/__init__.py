@@ -6,8 +6,11 @@ from typing import TypedDict
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 from fastapi_pagination import add_pagination
 from httpx import AsyncClient
+from redis import asyncio as aioredis
 from slugify import slugify
 from starlette import status
 from starlette.requests import Request
@@ -40,6 +43,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await users.create_admin_user()
 
     blacklist_token.init_blacklist_token_file()
+
+    redis = aioredis.from_url(settings.CACHE_DB_URL)
+    FastAPICache.init(RedisBackend(redis), prefix=f"__{settings.APP_NAME.lower()}")
 
     yield
     await shutdown_db(app=app)
