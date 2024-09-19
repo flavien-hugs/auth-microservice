@@ -5,6 +5,7 @@ from fastapi import APIRouter, Body, Depends, Query, Request, status
 from fastapi_pagination import paginate
 from pymongo import ASCENDING, DESCENDING
 
+from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdateUser
@@ -16,10 +17,14 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
 @user_router.post(
     "",
-    dependencies=[
-        Depends(AuthorizedHTTPBearer),
-        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-user"})),
-    ],
+    dependencies=(
+        [
+            Depends(AuthorizedHTTPBearer),
+            Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-user"})),
+        ]
+        if settings.REGISTER_USER_ENDPOINT_SECURITY_ENABLED
+        else []
+    ),
     response_model=User,
     response_model_exclude={"password", "is_primary"},
     status_code=status.HTTP_201_CREATED,

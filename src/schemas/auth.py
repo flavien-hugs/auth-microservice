@@ -12,23 +12,7 @@ from src.shared.error_codes import AuthErrorCode
 from .users import SignupBaseModel, PhonenumberModel
 
 
-class EmailModelMixin(BaseModel):
-    email: Optional[EmailStr] = None
-
-
-class RequestChangePassword(SignupBaseModel, EmailModelMixin):
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "examples": [
-                (
-                    {"email": "haf@example.com"}
-                    if settings.REGISTER_WITH_EMAIL
-                    else {"phonenumber": "+2250151571396", "password": "password"}
-                )
-            ]
-        }
-    )
+class CheckEmailOrPhone:
 
     @model_validator(mode="before")
     @classmethod
@@ -44,11 +28,32 @@ class RequestChangePassword(SignupBaseModel, EmailModelMixin):
         return values
 
 
+class EmailModelMixin(BaseModel):
+    email: Optional[EmailStr] = None
+
+
+class RequestChangePassword(SignupBaseModel, EmailModelMixin, CheckEmailOrPhone):
+
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                (
+                    {"email": "haf@example.com", "role": "5eb7cf5a86d9755df3a6c593"}
+                    if settings.REGISTER_WITH_EMAIL
+                    else {"password": "password", "phonenumber": "+2250151571396", "role": "5eb7cf5a86d9755df3a6c593"}
+                )
+            ]
+        }
+    )
+
+
 class VerifyOTP(PhonenumberModel):
     otp_code: str
 
 
-class LoginUser(RequestChangePassword):
+class LoginUser(BaseModel, CheckEmailOrPhone):
+    email: Optional[str] = None
+    phonenumber: Optional[str] = None
     password: str
 
     model_config = ConfigDict(

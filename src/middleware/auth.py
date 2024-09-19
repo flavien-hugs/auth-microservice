@@ -5,6 +5,7 @@ from typing import Set
 
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
+from fastapi_cache.decorator import cache
 from fastapi_jwt import JwtAccessBearer
 from jose import ExpiredSignatureError, jwt, JWTError
 from pwdlib import PasswordHash
@@ -13,10 +14,11 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 from slugify import slugify
 
 from src.common.helpers.exceptions import CustomHTTException
-from src.config import jwt_settings
+from src.config import jwt_settings, settings
 from src.services.roles import get_one_role
 from src.shared import blacklist_token
 from src.shared.error_codes import AuthErrorCode
+from src.shared.utils import custom_key_builder
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -80,7 +82,18 @@ class CustomAccessBearer:
         return result
 
     @classmethod
+    @cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder)  # noqa
     async def verify_access_token(cls, token: str) -> bool:
+        """
+        Verifies the validity of an access token by checking the cache and token properties.
+
+        :param token: The access token to verify.
+        :type token: str
+        :return: True if the token is valid, otherwise raises a CustomHTTException.
+        :rtype: bool
+        :raises CustomHTTException: If the token is expired or invalid, raises a CustomHTTException.
+        """
+
         try:
             if await blacklist_token.is_token_blacklisted(token):
                 raise CustomHTTException(
@@ -107,6 +120,18 @@ class CustomAccessBearer:
 
     @classmethod
     async def check_permissions(cls, token: str, required_permissions: Set[str] = ()) -> bool:
+        """
+        Checks if the token has the required permissions.
+
+        :param token: The access token.
+        :type token: str
+        :param required_permissions: A set of required permissions.
+        :type required_permissions: Set[str]
+        :return: True if the user has the required permissions, otherwise raises a CustomHTTException.
+        :rtype: bool
+        :raises CustomHTTException: If the user doesn't have the required permissions.
+        """
+
         docode_token = cls.decode_access_token(token)
         user_role_id = docode_token["subject"]["role"]
 

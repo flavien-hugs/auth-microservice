@@ -2,9 +2,10 @@ import logging
 import os
 from enum import StrEnum
 from secrets import compare_digest
-from typing import TypeVar
+from typing import Callable, Optional, TypeVar
 
 import pyotp
+from fastapi import Request, Response
 from fastapi_pagination import Page
 from fastapi_pagination.customization import CustomizedPage, UseName, UseOptionalParams
 from fastapi_pagination.utils import disable_installed_extensions_check
@@ -26,6 +27,32 @@ T = TypeVar("T")
 class SortEnum(StrEnum):
     ASC = "asc"
     DESC = "desc"
+
+
+def custom_key_builder(
+    func: Callable,
+    namespace: str = "",
+    *,
+    request: Optional[Request] = None,
+    response: Optional[Response] = None,
+    **kwargs,
+):
+    token_value = ""
+    query_params_str = ""
+    url_path = ""
+
+    if request is not None:
+        if (token := request.headers.get("Authorization")) is not None:
+            token_value = token.split()[1] if len(token.split()) > 1 else token
+        else:
+            token_value = next(iter(request.query_params.values()), "")
+
+        query_params_str = repr(sorted(request.query_params.items()))
+        url_path = request.url.path
+
+    result = ":".join([token_value, query_params_str, url_path])
+
+    return result
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

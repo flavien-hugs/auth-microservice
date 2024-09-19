@@ -20,6 +20,9 @@ class AuthBaseConfig(BaseSettings):
     LIST_ROLES_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         default=False, alias="LIST_ROLES_ENDPOINT_SECURITY_ENABLED"
     )
+    REGISTER_USER_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
+        default=False, alias="REGISTER_USER_ENDPOINT_SECURITY_ENABLED"
+    )
 
     # USER MODEL NAME
     USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")
@@ -34,6 +37,10 @@ class AuthBaseConfig(BaseSettings):
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")
     MONGODB_URI: str = Field(..., alias="MONGODB_URI")
+
+    # REDIS CONFIG
+    CACHE_DB_URL: str = Field(default="redis://redis:6379/0", alias="CACHE_DB_URL")
+    EXPIRE_CACHE: Optional[PositiveInt] = Field(default=500, alias="EXPIRE_CACHE")
 
 
 @lru_cache
