@@ -16,12 +16,12 @@ class PhonenumberModel(BaseModel):
 
 
 class SignupBaseModel(PhonenumberModel):
+    role: PydanticObjectId
     password: Optional[str] = None
 
 
 class UserBaseSchema(SignupBaseModel):
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
-    role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
 
 

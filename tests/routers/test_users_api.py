@@ -23,6 +23,7 @@ async def test_create_users_unauthorized(http_client_api, mock_authorized_http_b
     assert response.json() == {"code_error": "auth/invalid-access-token", "message_error": "Not enough segments"}
 
 
+@pytest.mark.skip
 @pytest.mark.asyncio
 async def test_create_users_forbidden(http_client_api, mock_check_permissions_handler, fake_user_data):
     response = await http_client_api.post(

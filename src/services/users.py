@@ -106,7 +106,8 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
 
 
 async def delete_user(user_id: PydanticObjectId) -> None:
-    await User.find_one({"_id": user_id}).delete()
+    user = await get_one_user(user_id=user_id)
+    await user.set({"is_active": False})
 
 
 async def delete_many_users(user_ids: Sequence[PydanticObjectId]) -> None:
