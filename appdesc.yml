@@ -54,3 +54,23 @@
             desc:
                 fr: "Peut afficher une permission"
                 en: "Can view permission information"
+        -
+            code: "auth:can-create-parameters"
+            desc:
+                fr: "Peut créer un/des paramètre(s)"
+                en: "Can create parameter"
+        -
+            code: "auth:can-display-parameters"
+            desc:
+                fr: "Peut afficher un/des paramètre(s)"
+                en: "Can display parameter information"
+        -
+            code: "auth:can-edit-parameters"
+            desc:
+                fr: "Peut mettre à jour un paramètre"
+                en: "Can edit parameter information"
+        -
+            code: "auth:can-delete-parameters"
+            desc:
+                fr: "Peut supprimer un paramètre"
+                en: "Can delete parameter"

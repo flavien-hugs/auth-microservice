@@ -48,6 +48,7 @@ flake8-pyproject = "^1.2.3"
 app = 'src.cli:app'
 create-first-user = 'src.shared.scripts.users:app'
 insert-default-roles = 'src.shared.scripts.roles:app'
+insert-default-params = 'src.shared.scripts.params:app'
 
 [build-system]
 requires = ["poetry-core"]

@@ -20,8 +20,8 @@ from src.common.helpers.appdesc import load_app_description, load_permissions
 from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exceptions import setup_exception_handlers
 from src.config import settings, shutdown_db, startup_db
-from src.models import Role, User
-from src.routers import auth_router, perm_router, role_router, user_router
+from src.models import Role, User, Params
+from src.routers import auth_router, perm_router, role_router, user_router, param_router
 from src.services import roles, users
 from src.shared import blacklist_token
 
@@ -34,7 +34,7 @@ class State(TypedDict):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    await startup_db(app=app, models=[User, Role])
+    await startup_db(app=app, models=[User, Role, Params])
 
     await load_app_description(mongodb_client=app.mongo_db_client)
     await load_permissions(mongodb_client=app.mongo_db_client)
@@ -74,6 +74,7 @@ async def ping():
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(role_router)
+app.include_router(param_router)
 app.include_router(perm_router)
 add_pagination(app)
 
