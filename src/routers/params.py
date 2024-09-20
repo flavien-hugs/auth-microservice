@@ -5,6 +5,7 @@ from fastapi import APIRouter, Depends, Body, Query, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
+from src.config import settings
 from src.models import Params
 from src.schemas.mixins import get_filter_params
 from src.schemas import ParamsModel, FilterParams
@@ -18,12 +19,10 @@ param_router = APIRouter(prefix="/parameters", tags=["PARAMETERS"])
 
 @param_router.post(
     "",
-    dependencies=(
-        [
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-parameters"})),
-        ]
-    ),
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-create-parameters"})),
+    ],
     response_model=Params,
     summary="Add new parameter",
     status_code=status.HTTP_201_CREATED,
@@ -39,6 +38,8 @@ async def create(payload: ParamsModel = Body(...)):
             Depends(AuthorizedHTTPBearer),
             Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-parameters"})),
         ]
+        if settings.LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED
+        else []
     ),
     summary="Get all parameters",
     response_model=customize_page(Params),
@@ -63,12 +64,10 @@ async def all(
 
 @param_router.get(
     "/{id}",
-    dependencies=(
-        [
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-parameters"})),
-        ]
-    ),
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-parameters"})),
+    ],
     response_model=Params,
     summary="Get one params",
     status_code=status.HTTP_200_OK,
@@ -79,12 +78,10 @@ async def read(id: PydanticObjectId):
 
 @param_router.patch(
     "/{id}",
-    dependencies=(
-        [
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-edit-parameters"})),
-        ]
-    ),
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-edit-parameters"})),
+    ],
     response_model=Params,
     summary="Update param",
     status_code=status.HTTP_202_ACCEPTED,
@@ -95,12 +92,10 @@ async def update(id: PydanticObjectId, payload: ParamsModel = Body(...)):
 
 @param_router.delete(
     "/{id}",
-    dependencies=(
-        [
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-parameters"})),
-        ]
-    ),
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-parameters"})),
+    ],
     summary="Remove param",
     status_code=status.HTTP_204_NO_CONTENT,
 )
