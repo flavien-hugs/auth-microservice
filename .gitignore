@@ -173,5 +173,3 @@ notebook.ipynb
 dotenv/
 .ruff_cache
 .tokens.txt
-fixtures
-data
