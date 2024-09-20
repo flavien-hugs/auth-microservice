@@ -32,3 +32,10 @@ class RoleErrorCode(StrEnum):
     ROLE_CREATE_FAILED = "roles/create-role-failed"
     ROLE_UPDATE_INFO_FAILED = "roles/update-role-failed"
     ROLE_ALREADY_EXIST = "roles/role-already-exist"
+
+
+class ParamErrorCode(StrEnum):
+    PARAM_NOT_FOUND = "parameters/parameter-not-found"
+    PARAM_ALREADY_EXIST = "parameters/parameter-already-exist"
+    PARAM_CREATE_FAILED = "parameters/create-parameter-failed"
+    PARAM_UPDATE_INFO_FAILED = "parameters/update-parameter-failed"
