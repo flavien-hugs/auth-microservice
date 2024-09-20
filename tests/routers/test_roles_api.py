@@ -170,9 +170,9 @@ async def test_get_role_members_succes(
     mock_authorized_http_bearer,
     mock_check_permissions_handler,
 ):
-    role_id = fake_role_collection.id
+    role = fake_role_collection.name
 
-    response = await http_client_api.get(f"/roles/{role_id}/members", headers={"Authorization": "Bearer valid_token"})
+    response = await http_client_api.get(f"/roles/{role}/members", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_200_OK, response.text
     assert response.json()["total"] >= 1
     assert response.json()["items"][0]["role"] == str(fake_user_collection.role)
