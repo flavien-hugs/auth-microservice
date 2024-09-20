@@ -100,7 +100,7 @@ async def delete_role(id: PydanticObjectId):
 if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
 
     @role_router.get(
-        "/{id}/members",
+        "/{name}/members",
         dependencies=[
             Depends(AuthorizedHTTPBearer),
             Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
@@ -110,10 +110,10 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
         status_code=status.HTTP_200_OK,
     )
     async def get_role_members(
-        id: PydanticObjectId,
+        name: str,
         sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
     ):
-        return await roles.get_roles_members(role_id=PydanticObjectId(id), sorting=sorting)
+        return await roles.get_users_for_role(name=name, sorting=sorting)
 
 
 @role_router.patch(
