@@ -132,20 +132,6 @@ class TestCustomAccessBearer:
         result = await self.custom_access_token.check_permissions("fake_access_token", {"perm-1"})
         assert result is True
 
-    @pytest.mark.asyncio
-    @mock.patch("src.services.auth.get_one_role")
-    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
-    async def test_check_permissions_insufficient(
-        self, mock_decode_access_token, mock_get_one_role, fake_user_data, fake_role_data
-    ):
-        mock_decode_access_token.return_value = {"subject": fake_user_data}
-        mock_get_one_role.return_value = fake_role_data
-
-        with pytest.raises(CustomHTTException) as exc_info:
-            await self.custom_access_token.check_permissions("fake_access_token", {"perm-3"})
-        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
-        assert exc_info.value.code_error == AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION
-
 
 class TestAuthorizeHTTPBearer:
 

@@ -6,22 +6,20 @@ from typing import TypedDict
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import RedirectResponse
-from fastapi_cache import FastAPICache
-from fastapi_cache.backends.redis import RedisBackend
 from fastapi_pagination import add_pagination
 from httpx import AsyncClient
-from redis import asyncio as aioredis
 from slugify import slugify
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
 from src.common.helpers.appdesc import load_app_description, load_permissions
+from src.common.helpers.caching import init_redis_cache
 from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exceptions import setup_exception_handlers
 from src.config import settings, shutdown_db, startup_db
-from src.models import Role, User, Params
-from src.routers import auth_router, perm_router, role_router, user_router, param_router
+from src.models import Params, Role, User
+from src.routers import auth_router, param_router, perm_router, role_router, user_router
 from src.services import roles, users
 from src.shared import blacklist_token
 
@@ -44,8 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
     blacklist_token.init_blacklist_token_file()
 
-    redis = aioredis.from_url(settings.CACHE_DB_URL)
-    FastAPICache.init(RedisBackend(redis), prefix=f"__{settings.APP_NAME.lower()}")
+    await init_redis_cache(app_name=BASE_URL, cache_db_url=settings.CACHE_DB_URL)
 
     yield
     await shutdown_db(app=app)

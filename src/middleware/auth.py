@@ -12,7 +12,7 @@ from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 from slugify import slugify
-
+from src.common.helpers.caching import custom_key_builder as cache_key_builder
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings, settings
 from src.services.roles import get_one_role
@@ -119,6 +119,7 @@ class CustomAccessBearer:
             ) from err
 
     @classmethod
+    @cache(expire=settings.EXPIRE_CACHE, key_builder=cache_key_builder(settings.APP_NAME + "check-permissions"))  # noqa
     async def check_permissions(cls, token: str, required_permissions: Set[str] = ()) -> bool:
         """
         Checks if the token has the required permissions.

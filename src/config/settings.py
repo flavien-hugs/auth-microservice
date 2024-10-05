@@ -14,17 +14,15 @@ class AuthBaseConfig(BaseSettings):
     APP_ACCESS_LOG: Optional[bool] = Field(default=True, alias="APP_ACCESS_LOG")
     APP_DEFAULT_PORT: Optional[PositiveInt] = Field(default=9077, alias="APP_DEFAULT_PORT")
     PASSWORD_MIN_LENGTH: Optional[PositiveInt] = Field(default=3, alias="PASSWORD_MIN_LENGTH")
-    ENABLE_OTP_CODE: Optional[bool] = Field(default=True, alias="ENABLE_OTP_CODE")
+    ENABLE_OTP_CODE: Optional[bool] = Field(..., alias="ENABLE_OTP_CODE")
     OTP_CODE_DIGIT_LENGTH: Optional[PositiveInt] = Field(default=4, alias="OTP_CODE_DIGIT_LENGTH")
-    REGISTER_WITH_EMAIL: Optional[bool] = Field(default=False, alias="REGISTER_WITH_EMAIL")
-    LIST_ROLES_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
-        default=False, alias="LIST_ROLES_ENDPOINT_SECURITY_ENABLED"
-    )
+    REGISTER_WITH_EMAIL: Optional[bool] = Field(..., alias="REGISTER_WITH_EMAIL")
+    LIST_ROLES_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(..., alias="LIST_ROLES_ENDPOINT_SECURITY_ENABLED")
     REGISTER_USER_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
-        default=False, alias="REGISTER_USER_ENDPOINT_SECURITY_ENABLED"
+        ..., alias="REGISTER_USER_ENDPOINT_SECURITY_ENABLED"
     )
     LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
-        default=False, alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
+        ..., alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
     )
 
     # USER MODEL NAME
