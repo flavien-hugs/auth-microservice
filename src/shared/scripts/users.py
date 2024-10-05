@@ -1,8 +1,7 @@
-import httpx
 import typer
 from email_validator import EmailNotValidError, validate_email
 
-from src.config import settings
+from .utils import BASE_URL, make_request
 
 app = typer.Typer(pretty_exceptions_enable=False)
 
@@ -37,17 +36,8 @@ def create_user():
         "password": password,
     }
 
-    api_url = f"http://0.0.0.0:{settings.APP_DEFAULT_PORT}/users/add"
-
-    with httpx.Client(timeout=30) as client:
-        response = client.post(api_url, json=payload)
-
-    try:
-        response.raise_for_status()
-    except httpx.HTTPStatusError as exc:
-        typer.echo(f"API error: {exc.response.text}", err=True)
-        raise typer.Exit(code=1) from exc
-
+    api_url = f"{BASE_URL}/users/add"
+    response = make_request(method="post", url=api_url, json=payload)
     if response.is_success:
         typer.echo(f"User with '{email}' created successfully.")
 

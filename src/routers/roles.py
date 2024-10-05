@@ -7,6 +7,7 @@ from pymongo import ASCENDING, DESCENDING
 
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
+from src.common.helpers.caching import delete_custom_key
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
@@ -15,6 +16,13 @@ from src.shared.utils import customize_page, SortEnum
 role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 
 
+@role_router.post(
+    "/_create",
+    response_model=Role,
+    summary="Create role (internal)",
+    status_code=status.HTTP_201_CREATED,
+    include_in_schema=False,
+)
 @role_router.post(
     "",
     dependencies=(
@@ -100,7 +108,7 @@ async def delete_role(id: PydanticObjectId):
 if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
 
     @role_router.get(
-        "/{id}/members",
+        "/{name}/members",
         dependencies=[
             Depends(AuthorizedHTTPBearer),
             Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-role"})),
@@ -110,12 +118,19 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
         status_code=status.HTTP_200_OK,
     )
     async def get_role_members(
-        id: PydanticObjectId,
+        name: str,
         sorting: Optional[SortEnum] = Query(SortEnum.DESC, description="Order by creation date: 'asc' or 'desc"),
     ):
-        return await roles.get_roles_members(role_id=PydanticObjectId(id), sorting=sorting)
+        return await roles.get_users_for_role(name=name, sorting=sorting)
 
 
+@role_router.patch(
+    "/{id}/_assign-permissions",
+    response_model=Role,
+    summary="Assign permissions to role (internal)",
+    status_code=status.HTTP_202_ACCEPTED,
+    include_in_schema=False,
+)
 @role_router.patch(
     "/{id}/assign-permissions",
     dependencies=[
@@ -127,4 +142,6 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     status_code=status.HTTP_200_OK,
 )
 async def manage_permission_to_role(id: PydanticObjectId, payload: Set[str] = Body(...)):
-    return await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
+    result = await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
+    await delete_custom_key(settings.APP_NAME + "check-permissions")
+    return result

@@ -78,26 +78,10 @@ async def login(payload: LoginUser) -> JSONResponse:
 
 
 async def logout(request: Request) -> JSONResponse:
-
-    authorization = request.headers.get("Authorization").split()[1]
-    await blacklist_token.add_blacklist_token(authorization)
-
-    decode_token = CustomAccessBearer.decode_access_token(authorization)
-
-    data = decode_token["subject"]
-    user_data = {
-        "id": data["id"],
-        "email": data["email"],
-        "fullname": data["fullname"],
-        "role": data["role"],
-        "is_active": data["is_active"],
-    }
-    response_data = {
-        "access_token": CustomAccessBearer.access_token(data=user_data, user_id=decode_token["jti"]),
-        "referesh_token": CustomAccessBearer.refresh_token(data=user_data, user_id=decode_token["jti"]),
-    }
-
-    return JSONResponse(status_code=status.HTTP_200_OK, content=jsonable_encoder(response_data))
+    authorization = request.headers.get("Authorization")
+    token = authorization.split()[1]
+    await blacklist_token.add_blacklist_token(token)
+    return JSONResponse(content={"message": "Logout successfully !"}, status_code=status.HTTP_200_OK)
 
 
 async def change_password(user_id: PydanticObjectId, change_password: ChangePassword):

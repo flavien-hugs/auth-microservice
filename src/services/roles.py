@@ -93,12 +93,17 @@ async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role
     return result
 
 
-async def get_roles_members(role_id: PydanticObjectId, sorting: Optional[SortEnum] = SortEnum.DESC):
-    role = await get_one_role(role_id=role_id)
+async def get_users_for_role(name: str, sorting: Optional[SortEnum] = SortEnum.DESC):
+    if (role := await Role.find_one({"slug": slugify(name)})) is None:
+        raise CustomHTTException(
+            code_error=RoleErrorCode.ROLE_NOT_FOUND,
+            message_error=f"Role with '{name}' not found.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
     users = await User.find({"role": PydanticObjectId(role.id)}, sort=[("created_at", sorted)]).to_list()
     users_list = [{**user.model_dump(by_alias=True, exclude={"password", "is_primary"})} for user in users]
-    result = paginate(users_list, additional_data={"role_info": role})
+    result = paginate(users_list)
     return result
 
 

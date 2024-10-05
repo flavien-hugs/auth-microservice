@@ -47,10 +47,12 @@ class SendSMSHandler:
     async def _send_sms_task(self, recipient: str, message: str):
         try:
             await self.__call__(recipient, message)
-        except SMSException as e:
-            _log.error(f"Failed to send SMS to {recipient}: {str(e)}")
-        except Exception as e:
-            _log.error(f"Unexpected error while sending SMS to {recipient}: {str(e)}")
+        except SMSException as exc:
+            _log.error(f"Failed to send SMS to {recipient}: {str(exc)}")
+            raise exc from exc
+        except Exception as err:
+            _log.error(f"Unexpected error while sending SMS to {recipient}: {str(err)}")
+            raise err from err
 
     async def send_sms(self, background_task: BackgroundTasks, recipient: str, message: str):
         background_task.add_task(self._send_sms_task, recipient, message)

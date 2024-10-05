@@ -1,5 +1,6 @@
 import logging
 import os
+from pathlib import Path
 from enum import StrEnum
 from secrets import compare_digest
 from typing import Callable, Optional, TypeVar
@@ -42,15 +43,20 @@ def custom_key_builder(
     url_path = ""
 
     if request is not None:
+        # Récupérer le token d'autorisation depuis les en-têtes de la requête
         if (token := request.headers.get("Authorization")) is not None:
             token_value = token.split()[1] if len(token.split()) > 1 else token
         else:
+            # Récupérer le premier paramètre de requête si le token n'est pas dans les en-têtes
             token_value = next(iter(request.query_params.values()), "")
 
+        # Convertir les paramètres de requête en chaîne de caractères triée
         query_params_str = repr(sorted(request.query_params.items()))
+        # Récupérer le chemin de l'URL de la requête
         url_path = request.url.path
 
-    result = ":".join([token_value, query_params_str, url_path])
+    # Construire la clé personnalisée
+    result = f"{token_value}:{query_params_str}:{url_path}"
 
     return result
 
@@ -83,40 +89,34 @@ class GenerateOPTKey:
 
 
 class TokenBlacklistHandler:
-
     def __init__(self):
-        self._token_file = os.getenv("BLACKLIST_TOKEN_FILE")
+        self._token_file = Path(os.getenv("BLACKLIST_TOKEN_FILE", ".token.txt"))
         if not self._token_file:
-            raise ValueError("Blacklist file does not exist !")
-        else:
-            self.init_blacklist_token_file()
+            raise ValueError("Blacklist file does not exist!")
+        self.init_blacklist_token_file()
 
     def init_blacklist_token_file(self) -> bool:
-        if not os.path.exists(self._token_file):
-            try:
-                open(file=self._token_file, mode="a").close()
-                logger.info("--> Initialising the token blacklist file !")
-            except IOError as e:
-                raise IOError(f"Error when initialising the token blacklist file: {e}") from e
-        logger.info("--> Token blacklist file already exist !")
+        try:
+            self._token_file.touch(exist_ok=True)
+        except IOError as e:
+            raise IOError(f"Error when initializing the token blacklist file: {e}") from e
         return True
 
     async def add_blacklist_token(self, token: str) -> bool:
         try:
-            with open(file=self._token_file, mode="a", encoding="utf-8") as file:
+            with self._token_file.open(mode="a", encoding="utf-8") as file:
                 file.write(f"{token},")
-                logger.info("--> Adding token to blacklist file !")
+                logger.info("--> Adding token to blacklist file!")
         except IOError as e:
             raise IOError(f"Error when adding token to blacklist: {e}") from e
         return True
 
     async def is_token_blacklisted(self, token: str) -> bool:
         try:
-            with open(file=self._token_file, encoding="utf-8") as file:
+            with self._token_file.open(encoding="utf-8") as file:
                 content = file.read()
                 tokens = content.rstrip(",").split(",")
-                logger.info("--> The token already exists in the blacklist !")
         except IOError as e:
-            raise IOError(f"Error verifying token in black list: {e}") from e
+            raise IOError(f"Error verifying token in blacklist: {e}") from e
 
         return any(compare_digest(value, token) for value in tokens)

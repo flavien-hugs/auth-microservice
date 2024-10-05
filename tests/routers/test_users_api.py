@@ -14,13 +14,11 @@ async def test_ping_api(http_client_api):
 
 
 @pytest.mark.asyncio
-async def test_create_users_unauthorized(http_client_api, mock_authorized_http_bearer, fake_user_data):
-    response = await http_client_api.post(
-        "/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
-    )
+async def test_create_users_unauthorized(http_client_api, fake_user_data):
+    response = await http_client_api.post("/users", json=fake_user_data)
 
-    assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.text
-    assert response.json() == {"code_error": "auth/invalid-access-token", "message_error": "Not enough segments"}
+    assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
+    assert response.json() == {"code_error": "auth/no-authenticated", "message_error": "Not authenticated"}
 
 
 @pytest.mark.skip
@@ -37,14 +35,14 @@ async def test_create_users_forbidden(http_client_api, mock_check_permissions_ha
 
 @pytest.mark.asyncio
 async def test_create_users_no_authenticated(
-    http_client_api, mock_authorized_http_bearer, mock_check_permissions_handler, fake_user_data
+    http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_user_data
 ):
     response = await http_client_api.post("/users", json=fake_user_data)
 
     assert response.status_code == status.HTTP_403_FORBIDDEN, response.text
     assert response.json() == {"code_error": "auth/no-authenticated", "message_error": "Not authenticated"}
 
-    mock_authorized_http_bearer.assert_not_called()
+    mock_verify_access_token.assert_not_called()
     mock_check_permissions_handler.assert_not_called()
 
 
@@ -63,7 +61,7 @@ async def test_add_users_failed(http_client_api, fake_user_data):
 
 @pytest.mark.asyncio
 async def test_create_users_already_exists(
-    http_client_api, mock_authorized_http_bearer, mock_check_permissions_handler, fake_user_collection, fake_user_data
+    http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_user_collection, fake_user_data
 ):
 
     fake_user_data.update({"email": fake_user_collection.email})
@@ -78,14 +76,14 @@ async def test_create_users_already_exists(
         "message_error": f"User with email '{fake_user_data['email']}' already exists",
     }
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_create_users_success(
-    http_client_api, mock_authorized_http_bearer, mock_check_permissions_handler, fake_user_data
+    http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_user_data
 ):
     response = await http_client_api.post(
         "/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
@@ -94,27 +92,27 @@ async def test_create_users_success(
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert fake_user_data["email"] == response.json()["email"]
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
 @pytest.mark.asyncio
-async def test_listing_users_success(http_client_api, mock_authorized_http_bearer, mock_check_permissions_handler):
+async def test_listing_users_success(http_client_api, mock_verify_access_token, mock_check_permissions_handler):
     response = await http_client_api.get("/users", headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_200_OK, response.text
     assert "items" in response.json()
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
 async def test_listing_users_with_query_success(
     http_client_api,
     fake_user_collection,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     search_email = fake_user_collection.email
@@ -125,15 +123,16 @@ async def test_listing_users_with_query_success(
     assert response.json()["items"][0]["email"] == search_email
     assert response.json()["total"] >= 1, "Le total doit-être supérieur ou égal à 1"
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_read_user_success(
     http_client_api,
     fake_user_collection,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     user_id = fake_user_collection.id
@@ -142,14 +141,15 @@ async def test_read_user_success(
     assert response.json()["_id"] == str(user_id)
     assert response.json()["email"] == fake_user_collection.email
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_read_user_not_found(
     http_client_api,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     response = await http_client_api.get(
@@ -161,16 +161,17 @@ async def test_read_user_not_found(
         "message_error": "User with '66e85363aa07cb1e95d3e3d0' not found.",
     }
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_update_user_success(
     http_client_api,
     fake_user_collection,
     fake_user_data,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     user_id = fake_user_collection.id
@@ -183,16 +184,17 @@ async def test_update_user_success(
     assert response.json()["_id"] == str(user_id)
     assert response.json()["fullname"] == fake_user_data["fullname"]
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_update_user_not_found(
     http_client_api,
     fake_user_collection,
     fake_user_data,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     fake_user_data.update({"fullname": "Adele"})
@@ -205,15 +207,16 @@ async def test_update_user_not_found(
         "message_error": "User with '66e85363aa07cb1e95d3e3d0' not found.",
     }
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_update_user_bad_request(
     http_client_api,
     fake_user_collection,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     user_id = fake_user_collection.id
@@ -225,15 +228,16 @@ async def test_update_user_bad_request(
         "message_error": "[{'field': 'body', 'message': 'Field required'}]",
     }
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
 
 
+@pytest.mark.asyncio
 async def test_delete_user_success(
     http_client_api,
     fake_user_collection,
-    mock_authorized_http_bearer,
+    mock_verify_access_token,
     mock_check_permissions_handler,
 ):
     user_id = fake_user_collection.id
@@ -241,6 +245,6 @@ async def test_delete_user_success(
     response = await http_client_api.delete(f"/users/{user_id}", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
-    mock_authorized_http_bearer.assert_called_once()
-    mock_authorized_http_bearer.assert_called_once_with("valid_token")
+    mock_verify_access_token.assert_called_once()
+    mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()

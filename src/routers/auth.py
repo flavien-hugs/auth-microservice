@@ -13,10 +13,13 @@ from src.schemas import (
     LoginUser,
     PhonenumberModel,
     RequestChangePassword,
+    SendEmailMessage,
+    SendSmsMessage,
     UserBaseSchema,
     VerifyOTP,
 )
 from src.services import auth
+from src.shared import mail_service, sms_service
 from src.shared.utils import custom_key_builder
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
@@ -121,3 +124,22 @@ if bool(enable_endpoint.SHOW_CHECK_USER_ATTRIBUTE_ENDPOINT):
         key: str = Query(...), value: str = Query(...), in_attributes: Optional[bool] = Query(default=False)
     ):
         return await auth.check_user_attribute(key=key, value=value, in_attributes=in_attributes)
+
+
+auth_router.tags = ["SEND MESSAGE"]
+auth_router.prefix = "/send"
+
+
+@auth_router.post("-sms", summary="Send a message", status_code=status.HTTP_200_OK, include_in_schema=False)
+async def send_sms(background: BackgroundTasks, payload: SendSmsMessage = Body(...)):
+    phone = payload.phone_number.replace("+", "")
+    await sms_service.send_sms(background, recipient=phone, message=payload.message)
+    return {"message": "SMS sent successfully."}
+
+
+@auth_router.post("-email", summary="Send a e-mail", status_code=status.HTTP_200_OK, include_in_schema=False)
+async def send_email(background: BackgroundTasks, payload: SendEmailMessage = Body(...)):
+    mail_service.send_email_background(
+        background, receiver_email=payload.recipients, subject=payload.subject, body=payload.message
+    )
+    return {"message": "E-mail sent successfully."}

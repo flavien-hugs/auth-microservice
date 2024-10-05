@@ -2,7 +2,7 @@ from .auth import ChangePassword, EmailModelMixin, LoginUser, ManageAccount, Req
 from .response import ResponseModelData
 from .roles import RoleModel
 from .params import ParamsModel
-from .mixins import FilterParams
+from .mixins import FilterParams, SendEmailMessage, SendSmsMessage
 from .users import CreateUser, PhonenumberModel, UpdateUser, UserBaseSchema
 
 __all__ = [
@@ -20,4 +20,6 @@ __all__ = [
     "RoleModel",
     "ParamsModel",
     "FilterParams",
+    "SendEmailMessage",
+    "SendSmsMessage",
 ]
