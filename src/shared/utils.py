@@ -98,10 +98,8 @@ class TokenBlacklistHandler:
     def init_blacklist_token_file(self) -> bool:
         try:
             self._token_file.touch(exist_ok=True)
-            logger.info("--> Initializing the token blacklist file!")
         except IOError as e:
             raise IOError(f"Error when initializing the token blacklist file: {e}") from e
-        logger.info("--> Token blacklist file already exists!")
         return True
 
     async def add_blacklist_token(self, token: str) -> bool:
@@ -118,7 +116,6 @@ class TokenBlacklistHandler:
             with self._token_file.open(encoding="utf-8") as file:
                 content = file.read()
                 tokens = content.rstrip(",").split(",")
-                logger.info("--> The token already exists in the blacklist!")
         except IOError as e:
             raise IOError(f"Error verifying token in blacklist: {e}") from e
 
