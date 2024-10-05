@@ -118,6 +118,14 @@ async def listing_users(
     summary="Get single user",
     status_code=status.HTTP_200_OK,
 )
+@user_router.get(
+    "/_i_{id}",
+    response_model=UserOut,
+    response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+    summary="Get single user (internal)",
+    status_code=status.HTTP_200_OK,
+    include_in_schema=False,
+)
 async def get_user(id: PydanticObjectId):
     return await users.get_one_user(user_id=PydanticObjectId(id))
 
