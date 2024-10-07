@@ -29,6 +29,7 @@ class AuthBaseConfig(BaseSettings):
     USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")
     ROLE_MODEL_NAME: str = Field(..., alias="ROLE_MODEL_NAME")
     PARAM_MODEL_NAME: str = Field(..., alias="PARAM_MODEL_NAME")
+    LOGIN_LOG_MODEL_NAME: str = Field(..., alias="LOGIN_LOG_MODEL_NAME")
 
     # FRONTEND URL CONFIG
     FRONTEND_URL: Optional[str] = Field(..., alias="FRONTEND_URL")

@@ -18,7 +18,7 @@ from src.common.helpers.caching import init_redis_cache
 from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exceptions import setup_exception_handlers
 from src.config import settings, shutdown_db, startup_db
-from src.models import Params, Role, User
+from src.models import Params, Role, User, LoginLog
 from src.routers import auth_router, param_router, perm_router, role_router, user_router
 from src.services import roles, users
 from src.shared import blacklist_token
@@ -32,7 +32,7 @@ class State(TypedDict):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    await startup_db(app=app, models=[User, Role, Params])
+    await startup_db(app=app, models=[User, Role, Params, LoginLog])
 
     await load_app_description(mongodb_client=app.mongo_db_client)
     await load_permissions(mongodb_client=app.mongo_db_client)

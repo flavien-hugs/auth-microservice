@@ -18,6 +18,7 @@ from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
 from .roles import get_one_role
 from .users import check_if_email_exist, get_one_user
+from .tracker import tracking
 
 template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
@@ -43,7 +44,7 @@ async def validate_user_status(user: User) -> None:
         )
 
 
-async def login(payload: LoginUser) -> JSONResponse:
+async def login(task: BackgroundTasks, request: Request, payload: LoginUser) -> JSONResponse:
     is_email = settings.REGISTER_WITH_EMAIL
     identifier: Optional[str] = payload.email if is_email else payload.phonenumber
 
@@ -73,7 +74,11 @@ async def login(payload: LoginUser) -> JSONResponse:
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-    response_data["user"]["role"] = role.model_dump(by_alias=True)
+
+    response_data.get("user", {}).update({"role": role.model_dump(by_alias=True)})
+
+    await tracking.insert_log(task=task, request=request, user_id=user.id)
+
     return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
 

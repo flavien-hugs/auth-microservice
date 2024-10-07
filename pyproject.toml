@@ -19,6 +19,7 @@ fastapi = {extras = ["standard"], version = "^0.115.0"}
 fastapi-pagination = "^0.12.27"
 pydantic-settings = "^2.5.2"
 pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}
+user-agents = "^2.2.0"
 
 
 [tool.poetry.group.test.dependencies]
