@@ -1,7 +1,7 @@
 from typing import Any, Dict, Optional
 
 import pymongo
-from beanie import Document
+from beanie import Document, PydanticObjectId
 from pydantic import field_validator, StrictBool, ValidationError
 from slugify import slugify
 
@@ -43,6 +43,24 @@ class User(CreateUser, DatetimeTimestamp, Document):
             validated_attributes[slugified_key] = v
 
         return validated_attributes
+
+
+class LoginLog(DatetimeTimestamp, Document):
+    user_id: PydanticObjectId
+    ip_address: str
+    device: Optional[str] = None
+    os: Optional[str] = None
+    browser: Optional[str] = None
+    is_tablet: Optional[bool] = False
+    is_mobile: Optional[bool] = False
+    is_pc: Optional[bool] = False
+    is_bot: Optional[bool] = False
+    is_touch_capable: Optional[bool] = False
+    is_email_client: Optional[bool] = False
+
+    class Settings:
+        name = settings.LOGIN_LOG_MODEL_NAME
+        use_state_management = True
 
 
 class UserOut(User):

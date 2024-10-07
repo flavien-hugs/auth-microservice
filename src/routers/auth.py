@@ -48,8 +48,8 @@ if bool(settings.REGISTER_WITH_EMAIL):
 
 
 @auth_router.post("/login", summary="Login", status_code=status.HTTP_200_OK)
-async def login(payload: LoginUser = Body(...)):
-    return await auth.login(payload)
+async def login(task: BackgroundTasks, request: Request, payload: LoginUser = Body(...)):
+    return await auth.login(task=task, request=request, payload=payload)
 
 
 if not bool(settings.REGISTER_WITH_EMAIL):

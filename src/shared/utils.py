@@ -1,7 +1,7 @@
 import logging
 import os
-from pathlib import Path
 from enum import StrEnum
+from pathlib import Path
 from secrets import compare_digest
 from typing import Callable, Optional, TypeVar
 
@@ -19,7 +19,7 @@ disable_installed_extensions_check()
 password_context = PasswordHash((Argon2Hasher(), BcryptHasher()))
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 T = TypeVar("T")
@@ -106,7 +106,7 @@ class TokenBlacklistHandler:
         try:
             with self._token_file.open(mode="a", encoding="utf-8") as file:
                 file.write(f"{token},")
-                logger.info("--> Adding token to blacklist file!")
+                _log.info("--> Adding token to blacklist file!")
         except IOError as e:
             raise IOError(f"Error when adding token to blacklist: {e}") from e
         return True

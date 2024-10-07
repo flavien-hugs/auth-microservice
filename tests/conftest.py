@@ -86,6 +86,33 @@ def mock_check_permissions_handler():
 
 
 @pytest.fixture(autouse=True)
+def mock_request():
+    """Fixture pour simuler l'objet Request avec un User-Agent."""
+
+    from fastapi import Request
+
+    mock_req = mock.AsyncMock(spec=Request)
+    mock_req.headers = {"User-Agent": "test-agent"}
+    return mock_req
+
+
+@pytest.fixture(autouse=True)
+def mock_task():
+    """Fixture pour simuler un objet BackgroundTasks."""
+
+    from fastapi import BackgroundTasks
+
+    return BackgroundTasks()
+
+
+@pytest.fixture
+def mock_tracking(autouse=True):
+    with mock.patch("src.services.auth.tracker") as mock_call:
+        mock_call.return_value = None
+        yield mock_call
+
+
+@pytest.fixture(autouse=True)
 async def http_client_api(mock_app_instance, clean_db):
     async with AsyncClient(app=mock_app_instance, base_url="http://auth.localhost.com") as client:
         yield client
