@@ -1,7 +1,7 @@
 from hmac import compare_digest
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, EmailStr, model_validator, StrictBool
+from pydantic import BaseModel, EmailStr, model_validator, StrictBool, Field
 from pydantic.config import ConfigDict
 from pydantic.json_schema import JsonSchemaMode
 from starlette import status
@@ -33,6 +33,7 @@ class EmailModelMixin(BaseModel):
 
 
 class RequestChangePassword(SignupBaseModel, EmailModelMixin, CheckEmailOrPhone):
+    password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH)
 
     model_config = ConfigDict(
         json_schema_extra={

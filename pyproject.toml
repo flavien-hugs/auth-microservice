@@ -6,16 +6,16 @@ authors = ["Flavien HUGS <flavienhugs@pm.me>"]
 packages = [{include = "src" }]
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "3.12.3"
 beanie = "^1.26.0"
 python-slugify = "^8.0.4"
 fastapi-jwt = "^0.3.0"
 python-jose = "^3.3.0"
 pyotp = "^2.9.0"
 httptools = "^0.6.1"
-uvloop = "^0.20.0"
+uvloop = "^0.21.0"
 fastapi-cache2 = {extras = ["redis"], version = "^0.2.2"}
-fastapi = {extras = ["standard"], version = "^0.115.0"}
+fastapi = {version = "^0.115.2", extras = ["standard"]}
 fastapi-pagination = "^0.12.27"
 pydantic-settings = "^2.5.2"
 pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}

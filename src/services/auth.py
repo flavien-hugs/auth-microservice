@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from secrets import compare_digest
 from typing import Optional
 
 from beanie import PydanticObjectId
@@ -17,8 +18,8 @@ from src.shared import blacklist_token, mail_service, otp_service, sms_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
 from .roles import get_one_role
-from .users import check_if_email_exist, get_one_user
 from .tracker import tracking
+from .users import check_if_email_exist, get_one_user
 
 template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
@@ -280,6 +281,14 @@ async def send_otp(user: User, background: BackgroundTasks):
 
 
 async def signup_with_phonenumber(background: BackgroundTasks, payload: RequestChangePassword):
+
+    if payload.password and compare_digest(payload.password, " "):
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_PASSWORD_EMPTY,
+            message_error="The password cannot be empty.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     if await User.find_one({"phonenumber": payload.phonenumber}).exists():
         raise CustomHTTException(
             code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
@@ -289,12 +298,11 @@ async def signup_with_phonenumber(background: BackgroundTasks, payload: RequestC
 
     user_data_dict = payload.model_copy(update={"password": password_hash(payload.password)})
     temp_user = User(**user_data_dict.model_dump(), attributes={})
-    new_user = await temp_user.create()
+    await temp_user.create()
 
     try:
         await send_otp(temp_user, background)
     except HTTPException as exc:
-        await new_user.delete()
         raise CustomHTTException(
             code_error=UserErrorCode.USER_CREATE_FAILED,
             message_error="Failed to send SMS OTP. Please try again.",
