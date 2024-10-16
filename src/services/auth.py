@@ -76,7 +76,7 @@ async def login(task: BackgroundTasks, request: Request, payload: LoginUser) -> 
         "user": user_data,
     }
 
-    response_data.get("user", {}).update({"role": role.model_dump(by_alias=True)})
+    response_data["user"]["role"] = role.model_dump(by_alias=True, exclude={"permissions", "created_at", "updated_at"})
 
     await tracking.insert_log(task=task, request=request, user_id=user.id)
 
