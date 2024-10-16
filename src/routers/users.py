@@ -2,7 +2,7 @@ from typing import Optional
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, Depends, Query, Request, status
-from fastapi_pagination import paginate
+from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
 from src.config import settings
@@ -52,6 +52,7 @@ async def create_user(request: Request, payload: CreateUser = Body(...)):
         Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
+    response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Get all users",
     status_code=status.HTTP_200_OK,
 )
@@ -91,20 +92,9 @@ async def listing_users(
         ]
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
-    users = await User.find(search, sort=[("created_at", sorted)]).to_list()
+    users = User.find(search, sort=[("created_at", sorted)])
 
-    return paginate(
-        [
-            {
-                **user.model_dump(
-                    by_alias=True,
-                    exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
-                ),
-                "extra": {"role_info": await roles.get_one_role(role_id=PydanticObjectId(user.role))},
-            }
-            for user in users
-        ]
-    )
+    return await paginate(users)
 
 
 @user_router.get(
@@ -127,7 +117,10 @@ async def listing_users(
     include_in_schema=False,
 )
 async def get_user(id: PydanticObjectId):
-    return await users.get_one_user(user_id=PydanticObjectId(id))
+    user = await users.get_one_user(user_id=PydanticObjectId(id))
+    role = await roles.get_one_role(role_id=user.role)
+    result = user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True, mode="json")}})
+    return result
 
 
 @user_router.patch(

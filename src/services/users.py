@@ -85,8 +85,9 @@ async def get_one_user(user_id: PydanticObjectId):
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    role = await get_one_role(role_id=PydanticObjectId(user.role))
-    return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}}, deep=True)
+    role = await get_one_role(role_id=user.role)
+    result = user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True, mode="json")}})
+    return result
 
 
 async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):

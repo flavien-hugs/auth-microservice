@@ -135,10 +135,10 @@ async def test_read_user_success(
     mock_verify_access_token,
     mock_check_permissions_handler,
 ):
-    user_id = fake_user_collection.id
-    response = await http_client_api.get(f"/users/{user_id}", headers={"Authorization": "Bearer valid_token"})
+    id_user = fake_user_collection.id
+    response = await http_client_api.get(f"/users/{id_user}", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_200_OK, response.text
-    assert response.json()["_id"] == str(user_id)
+    assert response.json()["_id"] == str(id_user)
     assert response.json()["email"] == fake_user_collection.email
 
     mock_verify_access_token.assert_called_once()

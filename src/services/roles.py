@@ -102,7 +102,7 @@ async def get_users_for_role(name: str, sorting: Optional[SortEnum] = SortEnum.D
         )
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
     users = await User.find({"role": PydanticObjectId(role.id)}, sort=[("created_at", sorted)]).to_list()
-    users_list = [{**user.model_dump(by_alias=True, exclude={"password", "is_primary"})} for user in users]
+    users_list = [{**user.model_dump(by_alias=True, mode="json", exclude={"password", "is_primary"})} for user in users]
     result = paginate(users_list)
     return result
 
