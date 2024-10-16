@@ -18,6 +18,7 @@ class AuthErrorCode(StrEnum):
 
 class UserErrorCode(StrEnum):
     USER_NOT_FOUND = "users/user-not-found"
+    USER_PASSWORD_EMPTY = "users/password-empty"
     USER_ACCOUND_DESABLE = "users/account-disabled"
     USER_CREATE_FAILED = "users/create-user-failed"
     USER_UPDATE_INFO_FAILED = "users/update-user-failed"

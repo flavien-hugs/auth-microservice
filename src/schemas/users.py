@@ -29,7 +29,7 @@ class CreateUser(UserBaseSchema):
     email: Optional[EmailStr] = None
 
     @classmethod
-    @field_validator("email", mode="after")
+    @field_validator("email", mode="before")
     def lowercase_email(cls, value) -> str:
         if value:
             return value.lower()
