@@ -68,7 +68,7 @@ async def login(task: BackgroundTasks, request: Request, payload: LoginUser) -> 
         )
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
-    user_data = user.model_dump(by_alias=True, exclude={"password", "attributes", "is_primary"})
+    user_data = user.model_dump(by_alias=True, mode="json", exclude={"password", "attributes", "is_primary"})
 
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
@@ -76,7 +76,9 @@ async def login(task: BackgroundTasks, request: Request, payload: LoginUser) -> 
         "user": user_data,
     }
 
-    response_data.get("user", {}).update({"role": role.model_dump(by_alias=True)})
+    response_data["user"]["role"] = role.model_dump(
+        by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"}
+    )
 
     await tracking.insert_log(task=task, request=request, user_id=user.id)
 

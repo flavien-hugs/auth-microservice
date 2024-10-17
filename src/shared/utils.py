@@ -10,6 +10,7 @@ from fastapi import Request, Response
 from fastapi_pagination import Page
 from fastapi_pagination.customization import CustomizedPage, UseName, UseOptionalParams
 from fastapi_pagination.utils import disable_installed_extensions_check
+from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
@@ -120,3 +121,7 @@ class TokenBlacklistHandler:
             raise IOError(f"Error verifying token in blacklist: {e}") from e
 
         return any(compare_digest(value, token) for value in tokens)
+
+
+async def get_fs(request: Request) -> AsyncIOMotorGridFSBucket:
+    return request.app.state.fs

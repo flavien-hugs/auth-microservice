@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, UTC
 from typing import Any, Dict, Optional
 
 from beanie import PydanticObjectId
@@ -40,3 +41,11 @@ class UpdateUser(BaseModel):
     role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
     attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
+
+
+class Metadata(BaseModel):
+    file_id: str
+    filename: Optional[str] = None
+    content_type: Optional[str] = None
+    description: Optional[str] = None
+    upload_date: Optional[datetime] = datetime.now(tz=UTC)

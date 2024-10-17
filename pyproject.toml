@@ -15,11 +15,12 @@ pyotp = "^2.9.0"
 httptools = "^0.6.1"
 uvloop = "^0.21.0"
 fastapi-cache2 = {extras = ["redis"], version = "^0.2.2"}
-fastapi = {version = "^0.115.2", extras = ["standard"]}
+fastapi = {version = "^0.115.0", extras = ["standard"]}
 fastapi-pagination = "^0.12.27"
 pydantic-settings = "^2.5.2"
 pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}
 user-agents = "^2.2.0"
+python-multipart = "^0.0.12"
 
 
 [tool.poetry.group.test.dependencies]
