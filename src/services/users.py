@@ -12,12 +12,12 @@ from slugify import slugify
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
-from src.shared.error_codes import UserErrorCode, RoleErrorCode
+from src.shared.error_codes import RoleErrorCode, UserErrorCode
 from src.shared.utils import password_hash
 from .roles import get_one_role
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
@@ -63,18 +63,18 @@ async def create_admin_user():
 
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
-        logger.info("--> Role not found !")
+        _log.info("--> Role not found !")
         return
 
     if await User.find_one({"email": paylaod["email"], "is_primary": True}).exists():
-        logger.info("--> Admin user alreay exist !")
+        _log.info("--> Admin user alreay exist !")
         return
     else:
         password = os.getenv("DEFAULT_ADMIN_PASSWORD")
         user = User(is_active=True, role=role.id, is_primary=True, **paylaod)
         user.password = password_hash(password)
         await user.create()
-        logger.info("--> Create first user successfully !")
+        _log.info("--> Create first user successfully !")
 
 
 async def get_one_user(user_id: PydanticObjectId):

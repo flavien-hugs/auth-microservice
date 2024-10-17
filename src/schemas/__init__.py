@@ -3,7 +3,7 @@ from .response import ResponseModelData
 from .roles import RoleModel
 from .params import ParamsModel
 from .mixins import FilterParams, SendEmailMessage, SendSmsMessage
-from .users import CreateUser, PhonenumberModel, UpdateUser, UserBaseSchema
+from .users import CreateUser, PhonenumberModel, UpdateUser, UserBaseSchema, Metadata
 
 __all__ = [
     "UserBaseSchema",
@@ -22,4 +22,5 @@ __all__ = [
     "FilterParams",
     "SendEmailMessage",
     "SendSmsMessage",
+    "Metadata",
 ]
