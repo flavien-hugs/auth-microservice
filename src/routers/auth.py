@@ -9,6 +9,7 @@ from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import (
     ChangePassword,
+    ChangePasswordWithOTPCode,
     EmailModelMixin,
     LoginUser,
     PhonenumberModel,
@@ -26,11 +27,11 @@ auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
 
 
 @auth_router.post("/signup", summary="Signup", status_code=status.HTTP_201_CREATED)
-async def register(background: BackgroundTasks, payload: RequestChangePassword = Body(...)):
+async def register(bg: BackgroundTasks, payload: RequestChangePassword = Body(...)):
     if settings.REGISTER_WITH_EMAIL:
-        return await auth.signup_with_email(background=background, email=payload.email)
+        return await auth.signup_with_email(bg, payload.email)
     else:
-        return await auth.signup_with_phonenumber(background, payload)
+        return await auth.signup_with_phonenumber(bg, payload)
 
 
 if bool(settings.REGISTER_WITH_EMAIL):
@@ -43,13 +44,13 @@ if bool(settings.REGISTER_WITH_EMAIL):
         summary="Complete registration if you are registered with an e-mail address.",
         description="Complete registration if you are registered with an e-mail address.",
     )
-    async def complete_registration(token: str, background: BackgroundTasks, payload: UserBaseSchema = Body(...)):
-        return await auth.complete_registration_with_email(token=token, user_data=payload, background=background)
+    async def register_completed(token: str, bg: BackgroundTasks, payload: UserBaseSchema = Body(...)):
+        return await auth.completed_register_with_email(token, payload, bg)
 
 
 @auth_router.post("/login", summary="Login", status_code=status.HTTP_200_OK)
-async def login(task: BackgroundTasks, request: Request, payload: LoginUser = Body(...)):
-    return await auth.login(task=task, request=request, payload=payload)
+async def login(bg: BackgroundTasks, request: Request, payload: LoginUser = Body(...)):
+    return await auth.login(bg, request, payload)
 
 
 if not bool(settings.REGISTER_WITH_EMAIL):
@@ -100,21 +101,39 @@ async def check_validate_access_token(token: str):
 
 @auth_router.put("/change-password/{id}", summary="Set up a password for the user.", status_code=status.HTTP_200_OK)
 async def change_password(id: str, payload: ChangePassword = Body(...)):
-    return await auth.change_password(user_id=PydanticObjectId(id), change_password=payload)
+    return await auth.change_password(user_id=PydanticObjectId(id), payload=payload)
 
 
-@auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
-async def request_password_reset(background: BackgroundTasks, payload: EmailModelMixin = Body(...)):
-    return await auth.request_password_reset(background=background, email=payload.email)
+if bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+    async def request_password_reset_with_email(bg: BackgroundTasks, payload: EmailModelMixin = Body(...)):
+        return await auth.request_password_reset_with_email(bg=bg, email=payload.email)
 
 
-@auth_router.post("/reset-password-completed", summary="Request a password reset.", status_code=status.HTTP_200_OK)
-async def reset_password_completed(
-    background: BackgroundTasks,
-    token: str = Query(..., alias="token", description="Reset password token"),
-    payload: ChangePassword = Body(...),
-):
-    return await auth.reset_password_completed(background=background, reset_passwoord_token=token, new_password=payload)
+if not bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+    async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel = Body(...)):
+        return await auth.request_password_reset_with_phonenumber(bg=bg, payload=payload)
+
+
+if bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post("/reset-password-completed", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+    async def email_reset_password_completed(
+        bg: BackgroundTasks,
+        token: str = Query(..., alias="token", description="Reset password token"),
+        payload: ChangePassword = Body(...),
+    ):
+        return await auth.reset_password_completed_with_email(bg, token=token, payload=payload)
+
+
+if not bool(settings.REGISTER_WITH_EMAIL):
+
+    @auth_router.post("/reset-password-completed", summary="Request a password reset.", status_code=status.HTTP_200_OK)
+    async def phonenumber_reset_password_completed(payload: ChangePasswordWithOTPCode = Body(...)):
+        return await auth.reset_password_completed_with_phonenumber(payload)
 
 
 if bool(enable_endpoint.SHOW_CHECK_USER_ATTRIBUTE_ENDPOINT):
@@ -140,6 +159,6 @@ async def send_sms(background: BackgroundTasks, payload: SendSmsMessage = Body(.
 @auth_router.post("-email", summary="Send a e-mail", status_code=status.HTTP_200_OK, include_in_schema=False)
 async def send_email(background: BackgroundTasks, payload: SendEmailMessage = Body(...)):
     mail_service.send_email_background(
-        background, receiver_email=payload.recipients, subject=payload.subject, body=payload.message
+        background, recipients=payload.recipients, subject=payload.subject, body=payload.message
     )
     return {"message": "E-mail sent successfully."}

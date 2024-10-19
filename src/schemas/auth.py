@@ -1,7 +1,8 @@
+import re
 from hmac import compare_digest
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, EmailStr, model_validator, StrictBool, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, StrictBool
 from pydantic.config import ConfigDict
 from pydantic.json_schema import JsonSchemaMode
 from starlette import status
@@ -9,7 +10,7 @@ from starlette import status
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import settings
 from src.shared.error_codes import AuthErrorCode
-from .users import SignupBaseModel, PhonenumberModel
+from .users import PhonenumberModel, SignupBaseModel
 
 
 class CheckEmailOrPhone:
@@ -137,3 +138,14 @@ class ChangePassword(BaseModel):
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
         return values
+
+
+class ChangePasswordWithOTPCode(ChangePassword):
+    code_otp: str
+    phonenumber: str
+
+    @field_validator("phonenumber", mode="before")
+    def phonenumber_validation(cls, value):  # noqa: B902
+        if value and not re.match(r"^\+?1?\d{9,15}$", value):
+            raise ValueError("Invalid phone number")
+        return value
