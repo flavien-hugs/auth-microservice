@@ -9,7 +9,7 @@ from starlette.background import BackgroundTasks
 
 from src.config import email_settings as env_email
 
-logger = logging.getLogger(__name__)
+_log = logging.getLogger(__name__)
 
 
 class MailServiceHandler:
@@ -44,11 +44,11 @@ class MailServiceHandler:
         self.smtp_server = smtp_server
         self.smtp_port = smtp_port
 
-    async def __call__(self, receiver_email: list[EmailStr], subject: str, body: str):
+    async def __call__(self, recipients: list[EmailStr], subject: str, body: str):
         message = MIMEMultipart()
 
         message["From"] = env_email.EMAIL_FROM_TO
-        message["To"] = receiver_email
+        message["To"] = recipients
         message["Subject"] = subject
         message.attach(MIMEText(_text=body, _subtype="html"))
 
@@ -57,18 +57,16 @@ class MailServiceHandler:
                 server.ehlo()
                 server.starttls(context=ssl.create_default_context())
                 server.login(user=self.email_address, password=self.email_password)
-                server.sendmail(from_addr=self.email_address, to_addrs=receiver_email, msg=message.as_string())
+                server.sendmail(from_addr=self.email_address, to_addrs=recipients, msg=message.as_string())
                 server.quit()
-            logger.debug("--> Email sent successfully.")
+            _log.debug("--> Email sent successfully.")
         except Exception as exc:
-            logger.debug("--> Email sent failed." + str(exc))
+            _log.debug("--> Email sent failed." + str(exc))
             raise
 
-    def send_email_background(
-        self, background_task: BackgroundTasks, receiver_email: list[EmailStr], subject: str, body: str
-    ):
-        background_task.add_task(self.__call__, receiver_email, subject, body)
-        logger.info("Email scheduled to be sent in the background.")
+    def send_email_background(self, bg: BackgroundTasks, recipients: list[EmailStr], subject: str, body: str):
+        bg.add_task(self.__call__, recipients, subject, body)
+        _log.info("Email scheduled to be sent in the background.")
 
 
 def email_sender_handler() -> MailServiceHandler:

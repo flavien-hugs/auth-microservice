@@ -14,11 +14,11 @@ from beanie import PydanticObjectId
 
 
 @pytest.mark.asyncio
-@mock.patch("src.services.auth.User.find_one", new_callable=mock.AsyncMock)
-@mock.patch("src.services.auth.verify_password", return_value=True)
-@mock.patch("src.services.auth.get_one_role", new_callable=mock.AsyncMock)
-@mock.patch("src.services.auth.CustomAccessBearer.access_token", return_value="access_token")
-@mock.patch("src.services.auth.CustomAccessBearer.refresh_token", return_value="refresh_token")
+@mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock)
+@mock.patch("src.services.auth.auth.verify_password", return_value=True)
+@mock.patch("src.services.auth.auth.get_one_role", new_callable=mock.AsyncMock)
+@mock.patch("src.services.auth.auth.CustomAccessBearer.access_token", return_value="access_token")
+@mock.patch("src.services.auth.auth.CustomAccessBearer.refresh_token", return_value="refresh_token")
 async def test_login_success(
     mock_refresh_token,
     mock_access_token,
@@ -59,7 +59,7 @@ async def test_login_success(
             return_value={"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"}
         )
 
-        response = await auth.login(task=mock_task, request=mock_request, payload=payload)
+        response = await auth.login(bg=mock_task, request=mock_request, payload=payload)
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_200_OK
 
@@ -71,7 +71,7 @@ async def test_login_success(
 
 
 @pytest.mark.asyncio
-@mock.patch("src.services.auth.User.find_one", new_callable=mock.AsyncMock)
+@mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock)
 async def test_login_inactive_user(mock_find_one, fixture_models, mock_request, mock_task):
     for register_with_email in [True, False]:
         settings.REGISTER_WITH_EMAIL = register_with_email
@@ -99,7 +99,7 @@ async def test_login_inactive_user(mock_find_one, fixture_models, mock_request, 
         mock_find_one.return_value = fake_user
 
         with pytest.raises(CustomHTTException) as excinfo:
-            await auth.login(task=mock_task, request=mock_request, payload=payload)
+            await auth.login(bg=mock_task, request=mock_request, payload=payload)
 
         assert excinfo.typename == "CustomHTTException"
         assert excinfo.value.status_code == status.HTTP_403_FORBIDDEN
@@ -112,8 +112,8 @@ async def test_login_inactive_user(mock_find_one, fixture_models, mock_request, 
 
 
 @pytest.mark.asyncio
-@mock.patch("src.services.auth.User.find_one", new_callable=mock.AsyncMock)
-@mock.patch("src.services.auth.verify_password", return_value=False)
+@mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock)
+@mock.patch("src.services.auth.auth.verify_password", return_value=False)
 async def test_login_invalid_password(mock_verify_password, mock_find_one, mock_task, mock_request, fixture_models):
     settings.REGISTER_WITH_EMAIL = True
 
@@ -139,7 +139,7 @@ async def test_login_invalid_password(mock_verify_password, mock_find_one, mock_
 
 
 @pytest.mark.asyncio
-@mock.patch("src.services.auth.User.find_one", new_callable=mock.AsyncMock)
+@mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock)
 async def test_login_invalid_identifier_not_found(mock_find_one, mock_task, mock_request, fixture_models):
     for register_with_email in [True, False]:
         settings.REGISTER_WITH_EMAIL = register_with_email
@@ -152,7 +152,7 @@ async def test_login_invalid_identifier_not_found(mock_find_one, mock_task, mock
         mock_find_one.return_value = None
 
         with pytest.raises(CustomHTTException) as excinfo:
-            await auth.login(task=mock_task, request=mock_request, payload=payload)
+            await auth.login(bg=mock_task, request=mock_request, payload=payload)
 
         expected_message = "User does not exist."
         assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST

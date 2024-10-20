@@ -42,6 +42,7 @@ class AuthBaseConfig(BaseSettings):
 
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")
+    MONGO_FS_BUCKET_NAME: str = Field(default="auth", alias="MONGO_FS_BUCKET_NAME")
     MONGODB_URI: str = Field(..., alias="MONGODB_URI")
 
     # REDIS CONFIG

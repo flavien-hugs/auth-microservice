@@ -1,1 +1,1 @@
-Bonjour, utilsez ce code OTP: {{ otp_code }} pour vous connecter à votre compte {{ service_name }}.
+Bonjour, votre code vérification est: {{ otp_code }}
