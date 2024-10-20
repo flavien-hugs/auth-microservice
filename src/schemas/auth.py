@@ -117,20 +117,20 @@ class ManageAccount(BaseModel):
 
 
 class ChangePassword(BaseModel):
-    current_password: str
+    new_password: str
     confirm_password: str
 
     @model_validator(mode="before")
     @classmethod
     def validate_new_password(cls, values: dict) -> dict:
-        current_password = values.get("current_password")
+        new_password = values.get("new_password")
         confirm_password = values.get("confirm_password")
 
         if (
-            current_password is not None
+            new_password is not None
             and confirm_password is not None
             and len(confirm_password) < settings.PASSWORD_MIN_LENGTH
-            and compare_digest(current_password, confirm_password) is False
+            and compare_digest(new_password, confirm_password) is False
         ):
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
