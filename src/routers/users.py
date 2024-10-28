@@ -97,7 +97,11 @@ async def listing_users(
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
     users_list = await User.find(search, sort=[("created_at", sorted)]).to_list()
     users = [
-        user.model_dump(exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"})
+        user.model_dump(
+            by_alias=True,
+            mode="json",
+            exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+        )
         for user in users_list
         if user.is_primary is False
     ]
