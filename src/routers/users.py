@@ -2,7 +2,7 @@ from typing import Optional
 
 from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, Depends, File, Path, Query, Request, status, UploadFile
-from fastapi_pagination.ext.beanie import paginate
+from fastapi_pagination.async_paginator import paginate
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pymongo import ASCENDING, DESCENDING
 
@@ -60,13 +60,15 @@ async def create_user(request: Request, payload: CreateUser = Body(...)):
 async def listing_users(
     query: Optional[str] = Query(None, description="Filter by user"),
     # is_primary: bool = Query(default=False, description="Filter grant super admin"),
-    is_active: bool = Query(default=True, alias="active", description="Filter account is active or disable"),
+    is_active: Optional[bool] = Query(default=None, alias="active", description="Filter account is active or disable"),
     sorting: Optional[SortEnum] = Query(
         SortEnum.DESC, alias="sort", description="Order by creation date: 'asc' or 'desc"
     ),
 ):
     # search = {"is_primary": is_primary}
-    search = {"is_primary": False, "is_active": is_active}
+    search = {}
+    if is_active:
+        search.update({"is_active": is_active, "is_primary": False})
     if query:
         search["$or"] = [
             {"email": {"$regex": query, "$options": "i"}},
@@ -93,8 +95,16 @@ async def listing_users(
         ]
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
-    users = User.find(search, sort=[("created_at", sorted)])
-
+    users_list = await User.find(search, sort=[("created_at", sorted)]).to_list()
+    users = [
+        user.model_dump(
+            by_alias=True,
+            mode="json",
+            exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+        )
+        for user in users_list
+        if user.is_primary is False
+    ]
     return await paginate(users)
 
 

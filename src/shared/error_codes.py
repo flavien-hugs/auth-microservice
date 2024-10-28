@@ -28,6 +28,7 @@ class UserErrorCode(StrEnum):
     USER_PHONENUMBER_NOT_FOUND = "users/phone-number-not-found"
     USER_PHONENUMBER_TAKEN = "users/phonenumber-already-taken"
     UPLOAD_FILE_ERROR = "users/upload-file-error"
+    USER_DELETE_PRIMARY = "users/can-not-delete-user"
 
 
 class RoleErrorCode(StrEnum):

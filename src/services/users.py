@@ -36,7 +36,8 @@ async def check_if_email_exist(email: EmailStr) -> bool:
 async def create_user(user_data: CreateUser) -> User:
     await get_one_role(role_id=user_data.role)
     await check_if_email_exist(email=user_data.email.lower())
-    new_user = await User(**user_data.model_dump()).create()
+    user_dict = user_data.model_copy(update={"password": password_hash(user_data.password)})
+    new_user = await User(**user_dict.model_dump()).create()
     return new_user
 
 
@@ -108,6 +109,12 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
 
 async def delete_user(user_id: PydanticObjectId) -> None:
     user = await get_one_user(user_id=user_id)
+    if user.is_primary:
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_DELETE_PRIMARY,
+            message_error="Primary user cannot be deleted.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
     await user.set({"is_active": False})
 
 
