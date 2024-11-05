@@ -2,7 +2,7 @@ from typing import Any, Dict, Optional
 
 import pymongo
 from beanie import Document, PydanticObjectId
-from pydantic import field_validator, StrictBool, ValidationError
+from pydantic import field_validator, StrictBool
 from slugify import slugify
 
 from src.config import settings
@@ -22,7 +22,7 @@ class User(CreateUser, DatetimeTimestamp, Document):
     @field_validator("attributes", mode="before")
     def validate_and_slugify_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:  # noqa: B902
         if not isinstance(value, dict):
-            raise ValidationError("The attributes must be a dictionary")
+            raise ValueError("The attributes must be a dictionary")
 
         existing_fields = set(cls.model_fields.keys())
 
@@ -31,14 +31,10 @@ class User(CreateUser, DatetimeTimestamp, Document):
         for k, v in value.items():
             slugified_key = slugify(k, separator="_")
             if slugified_key in existing_fields:
-                raise ValidationError(
-                    f"The '{k}' key (slugified as '{slugified_key}') is already an existing User field."
-                )
+                raise ValueError(f"The '{k}' key (slugified as '{slugified_key}') is already an existing User field.")
 
             if slugified_key in validated_attributes:
-                raise ValidationError(
-                    f"Key '{k}' (slugified as '{slugified_key}') conflicts with another attribute key"
-                )
+                raise ValueError(f"Key '{k}' (slugified as '{slugified_key}') conflicts with another attribute key")
 
             validated_attributes[slugified_key] = v
 
