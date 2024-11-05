@@ -1,6 +1,7 @@
 from typing import Any, Dict, Optional
 
 import pymongo
+from starlette import status
 from beanie import Document, PydanticObjectId
 from pydantic import field_validator, StrictBool
 from slugify import slugify
@@ -8,6 +9,8 @@ from slugify import slugify
 from src.config import settings
 from src.schemas import CreateUser
 from .mixins import DatetimeTimestamp
+from src.common.helpers.exceptions import CustomHTTException
+from src.shared.error_codes import UserErrorCode
 
 
 class User(CreateUser, DatetimeTimestamp, Document):
@@ -22,7 +25,11 @@ class User(CreateUser, DatetimeTimestamp, Document):
     @field_validator("attributes", mode="before")
     def validate_and_slugify_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:  # noqa: B902
         if not isinstance(value, dict):
-            raise ValueError("The attributes must be a dictionary")
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                message_error="Attributes must be a dictionary.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         existing_fields = set(cls.model_fields.keys())
 
@@ -31,10 +38,18 @@ class User(CreateUser, DatetimeTimestamp, Document):
         for k, v in value.items():
             slugified_key = slugify(k, separator="_")
             if slugified_key in existing_fields:
-                raise ValueError(f"The '{k}' key (slugified as '{slugified_key}') is already an existing User field.")
+                raise CustomHTTException(
+                    code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                    message_error=f"The '{k}' key ('{slugified_key}') is already an existing User field.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
             if slugified_key in validated_attributes:
-                raise ValueError(f"Key '{k}' (slugified as '{slugified_key}') conflicts with another attribute key")
+                raise CustomHTTException(
+                    code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                    message_error=f"Key '{k}' ('{slugified_key}') conflicts with another attribute key",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
             validated_attributes[slugified_key] = v
 
