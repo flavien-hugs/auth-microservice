@@ -4,6 +4,11 @@ from typing import Any, Dict, Optional
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
+from slugify import slugify
+from starlette import status
+
+from src.common.helpers.exceptions import CustomHTTException
+from src.shared.error_codes import UserErrorCode
 
 
 class PhonenumberModel(BaseModel):
@@ -36,11 +41,56 @@ class CreateUser(UserBaseSchema):
             return value.lower()
         return value
 
+    @field_validator("attributes", mode="before")
+    def check_unique_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:  # noqa: B902
+        if not isinstance(value, dict):
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                message_error="Attributes must be a dictionary.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        seen_keys = set()
+
+        for k, _ in value.items():
+            slugified_key = slugify(k, separator="_")
+            if slugified_key in seen_keys:
+                raise CustomHTTException(
+                    code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                    message_error=f"Duplicate key '{k}' ('{slugified_key}') in attributes.",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
+
+            seen_keys.add(slugified_key)
+
+        return value
+
 
 class UpdateUser(BaseModel):
     role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
     attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
+
+    @classmethod
+    @field_validator("attributes", mode="before")
+    def check_if_attributes_is_dict(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+        if not isinstance(value, dict):
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                message_error="Attributes must be a dictionary.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+        return value
+
+    @classmethod
+    @field_validator("attributes", mode="before")
+    def validate_attributes(cls, attrs: Dict[str, Any]) -> Dict[str, Any]:
+        validated_attributes = {}
+        for k, value in attrs.items():
+            slugified_key = slugify(k, separator="_")
+            validated_attributes[slugified_key] = value
+
+        return validated_attributes
 
 
 class Metadata(BaseModel):
