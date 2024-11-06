@@ -24,6 +24,7 @@ class AuthBaseConfig(BaseSettings):
     LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         ..., alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
     )
+    USE_GRIDFS_STORAGE: Optional[bool] = Field(default=False, alias="USE_GRIDFS_STORAGE")
 
     # USER MODEL NAME
     USER_MODEL_NAME: str = Field(..., alias="USER_MODEL_NAME")
