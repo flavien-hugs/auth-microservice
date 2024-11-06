@@ -173,9 +173,15 @@ async def test_update_user_success(
     fake_user_data,
     mock_verify_access_token,
     mock_check_permissions_handler,
+    fake_data,
 ):
     user_id = fake_user_collection.id
-    fake_user_data.update({"fullname": "Toto le banzou"})
+    fake_user_data.update(
+        {
+            "fullname": fake_data.name(),
+            "attributes": {"city": fake_data.city()},
+        }
+    )
 
     response = await http_client_api.patch(
         f"/users/{user_id}", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
