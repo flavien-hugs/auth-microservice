@@ -4,7 +4,7 @@ from datetime import datetime, UTC
 from typing import Sequence
 
 from beanie import PydanticObjectId
-from fastapi import status
+from fastapi import BackgroundTasks, status
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
 from slugify import slugify
@@ -12,6 +12,7 @@ from slugify import slugify
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
 from src.schemas import CreateUser, UpdateUser
+from src.services.shared import send_otp
 from src.shared.error_codes import RoleErrorCode, UserErrorCode
 from src.shared.utils import password_hash
 from .roles import get_one_role
@@ -33,11 +34,13 @@ async def check_if_email_exist(email: EmailStr) -> bool:
     return True
 
 
-async def create_user(user_data: CreateUser) -> User:
+async def create_user(user_data: CreateUser, bg: BackgroundTasks) -> User:
     await get_one_role(role_id=user_data.role)
     await check_if_email_exist(email=user_data.email.lower())
     user_dict = user_data.model_copy(update={"password": password_hash(user_data.password)})
-    new_user = await User(**user_dict.model_dump()).create()
+    new_user = User(**user_dict.model_dump())
+    await new_user.create()
+    await send_otp(new_user, bg)
     return new_user
 
 

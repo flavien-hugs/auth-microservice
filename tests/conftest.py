@@ -174,6 +174,7 @@ async def fake_role_collection(fixture_models, fake_role_data):
 def fake_user_data(fake_role_collection, fake_data):
     return {
         "email": fake_data.unique.email().lower(),
+        "phonenumber": "+2250101010101",
         "fullname": fake_data.name(),
         "role": str(fake_role_collection.id),
         "attributes": {"city": fake_data.city()},

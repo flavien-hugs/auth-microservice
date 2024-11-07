@@ -3,8 +3,8 @@ from datetime import datetime, timezone
 from fastapi import BackgroundTasks
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from src.models import User
 from src.config import sms_config
+from src.models import User
 from src.shared import otp_service, sms_service
 
 

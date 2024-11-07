@@ -13,10 +13,10 @@ from src.schemas import (
     RequestChangePassword,
     VerifyOTP,
 )
+from src.services.shared import send_otp
 from src.shared import otp_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash
-from .shared import send_otp
 
 
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
