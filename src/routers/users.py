@@ -1,7 +1,7 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, File, Path, Query, Request, status, UploadFile, BackgroundTasks
+from fastapi import APIRouter, Body, Depends, File, Path, Query, Request, status, UploadFile
 from fastapi_pagination.async_paginator import paginate
 from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pymongo import ASCENDING, DESCENDING
@@ -39,11 +39,11 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
     summary="Add new user",
     include_in_schema=False,
 )
-async def create_user(request: Request, bg: BackgroundTasks, payload: CreateUser = Body(...)):
+async def create_user(request: Request, payload: CreateUser = Body(...)):
     if request.url.path.endswith("/add"):
         return await users.create_first_user(payload)
     else:
-        return await users.create_user(payload, bg)
+        return await users.create_user(payload)
 
 
 @user_router.get(
