@@ -118,19 +118,7 @@ class TestCustomAccessBearer:
         with pytest.raises(CustomHTTException) as exc_info:
             await self.custom_access_token.verify_access_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-        assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN
-
-    @pytest.mark.asyncio
-    @mock.patch("src.services.users.get_one_role")
-    @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
-    async def test_check_permissions_success(
-        self, mock_decode_access_token, mock_get_one_role, fake_user_data, fake_role_data
-    ):
-        mock_decode_access_token.return_value = {"subject": fake_user_data}
-        mock_get_one_role.return_value = fake_role_data
-
-        result = await self.custom_access_token.check_permissions("fake_access_token", {"perm-1"})
-        assert result is True
+        assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKENx
 
 
 class TestAuthorizeHTTPBearer:

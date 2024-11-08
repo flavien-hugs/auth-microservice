@@ -1,5 +1,4 @@
 import logging
-import os
 from datetime import datetime, timedelta, timezone
 from typing import Set
 
@@ -18,7 +17,7 @@ from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings, settings
 from src.services.roles import get_one_role
 from src.shared import blacklist_token
-from src.shared.error_codes import AuthErrorCode
+from src.shared.error_codes import AuthErrorCode, UserErrorCode
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 
@@ -103,7 +102,9 @@ class CustomAccessBearer:
             decode_token = cls.decode_access_token(token)
             current_timestamp = datetime.now(timezone.utc).timestamp()
 
-            if decode_token["subject"]["is_active"] is True and decode_token["exp"] > current_timestamp:
+            check_if_active = decode_token.get("subject", {}).get("is_active", False)
+            token_exp = decode_token.get("exp", 0)
+            if check_if_active is True and token_exp > current_timestamp:
                 return True
             raise CustomHTTException(
                 code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,
@@ -133,12 +134,11 @@ class CustomAccessBearer:
         """
 
         docode_token = cls.decode_access_token(token)
-        user_role_id = docode_token["subject"]["role"]
+        user_role_id = docode_token.get("subject", {}).get("role", {}).get("_id")
 
         role = await get_one_role(role_id=user_role_id)
 
-        default_role = os.getenv("DEFAULT_ADMIN_ROLE")
-        if role.slug == slugify(default_role):
+        if role.slug == slugify(settings.DEFAULT_ADMIN_ROLE):
             return True
 
         user_permissions = {perm["code"] for permissions in role.permissions for perm in permissions["permissions"]}
@@ -206,3 +206,54 @@ class CheckPermissionsHandler:
             )
         token = authorization.split("Bearer ")[1]
         return await CustomAccessBearer.check_permissions(token, self._required_permissions)
+
+
+class CheckUserAccessHandler:
+    """ "
+    Handler for checking user access based on the provided key and roles.
+
+    This class provides a callable interface to check if a user has access to a resource
+    based on the provided key and roles. It verifies that the user has the required roles
+    to access the resource and that the user is the owner of the resource.
+
+    :param key: The key to check for the resource.
+    :rtype key: str
+    :return: True if the user has access to the resource, otherwise raises a CustomHTTException.
+    :rtype: bool
+    :raises CustomHTTException: If the user is not authorized to access the resource.
+    """
+
+    def __init__(self, key: str):
+        self.key = key
+
+    async def __call__(self, request: Request) -> str:
+        authorization = request.headers.get("Authorization")
+        if not authorization or not authorization.startswith("Bearer "):
+            raise CustomHTTException(
+                code_error=AuthErrorCode.AUTH_INVALID_TOKEN,
+                message_error="Invalid or missing token.",
+                status_code=status.HTTP_401_UNAUTHORIZED,
+            )
+        token = authorization.split("Bearer ")[1]
+
+        if not (value := request.path_params.get(self.key) or request.query_params.get(self.key)):
+            raise CustomHTTException(
+                code_error=UserErrorCode.USER_NOT_FOUND,
+                message_error=f"Resource '{value}' not found.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user_info = CustomAccessBearer.decode_access_token(token=token)
+        user_subject = user_info.get("subject", {})
+        user_role_info = user_subject.get("role", {})
+
+        if user_role_info.get("slug", "") == slugify(settings.DEFAULT_ADMIN_ROLE) or user_subject.get("_id") == str(
+            value
+        ):
+            return value
+        else:
+            raise CustomHTTException(
+                code_error=UserErrorCode.USER_UNAUTHORIZED_PERFORM_ACTION,
+                message_error="You are not authorized to perform this action.",
+                status_code=status.HTTP_403_FORBIDDEN,
+            )

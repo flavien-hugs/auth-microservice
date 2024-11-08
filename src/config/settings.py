@@ -7,13 +7,14 @@ from pydantic_settings import BaseSettings
 class AuthBaseConfig(BaseSettings):
     # APP CONFIG
     APP_NAME: Optional[str] = Field(default="Auth", alias="APP_NAME")
-    APP_TITLE: Optional[str] = Field(default="User management and Auth", alias="APP_TITLE")
+    APP_TITLE: Optional[str] = Field(default="UNSTA: User management and Auth", alias="APP_TITLE")
     APP_HOSTNAME: Optional[str] = Field(default="0.0.0.0", alias="APP_HOSTNAME")
     APP_RELOAD: Optional[bool] = Field(default=True, alias="APP_RELOAD")
     FULLNAME_MIN_LENGTH: Optional[PositiveInt] = Field(default=4, alias="FULLNAME_MIN_LENGTH")
     APP_ACCESS_LOG: Optional[bool] = Field(default=True, alias="APP_ACCESS_LOG")
     APP_DEFAULT_PORT: Optional[PositiveInt] = Field(default=9077, alias="APP_DEFAULT_PORT")
     PASSWORD_MIN_LENGTH: Optional[PositiveInt] = Field(default=3, alias="PASSWORD_MIN_LENGTH")
+    DEFAULT_ADMIN_ROLE: Optional[str] = Field(default="Super administrateur", alias="DEFAULT_ADMIN_ROLE")
     ENABLE_OTP_CODE: Optional[bool] = Field(..., alias="ENABLE_OTP_CODE")
     OTP_CODE_DIGIT_LENGTH: Optional[PositiveInt] = Field(default=4, alias="OTP_CODE_DIGIT_LENGTH")
     REGISTER_WITH_EMAIL: Optional[bool] = Field(..., alias="REGISTER_WITH_EMAIL")

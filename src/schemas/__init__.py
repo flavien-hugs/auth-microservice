@@ -1,5 +1,6 @@
 from .auth import (
     ChangePassword,
+    UpdatePassword,
     ChangePasswordWithOTPCode,
     EmailModelMixin,
     LoginUser,
@@ -24,6 +25,7 @@ __all__ = [
     "LoginUser",
     "ManageAccount",
     "ChangePassword",
+    "UpdatePassword",
     "ResponseModelData",
     "RoleModel",
     "ParamsModel",

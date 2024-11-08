@@ -7,9 +7,9 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pymongo import ASCENDING, DESCENDING
 
 from src.config import settings
-from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
+from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
-from src.schemas import CreateUser, UpdateUser
+from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.services import files, roles, users
 from src.shared.utils import customize_page, get_fs, SortEnum
 
@@ -139,6 +139,7 @@ async def get_user(id: PydanticObjectId):
     response_model=User,
     dependencies=[
         Depends(AuthorizedHTTPBearer),
+        Depends(CheckUserAccessHandler(key="id")),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
@@ -149,17 +150,42 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
     return await users.update_user(user_id=PydanticObjectId(id), update_user=payload)
 
 
+@user_router.put(
+    "/{id}/update-password",
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckUserAccessHandler(key="id")),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
+    ],
+)
+async def update_user_password(id: PydanticObjectId, payload: UpdatePassword = Body(...)):
+    return await users.update_user_password(user_id=PydanticObjectId(id), payload=payload)
+
+
+@user_router.put(
+    "/{id}/activate",
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckUserAccessHandler(key="id")),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
+    ],
+)
+async def activate_user_account(id: PydanticObjectId):
+    return await users.activate_user_account(user_id=PydanticObjectId(id))
+
+
 @user_router.delete(
     "/{id}",
     dependencies=[
         Depends(AuthorizedHTTPBearer),
+        Depends(CheckUserAccessHandler(key="id")),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-delete-user"})),
     ],
     summary="Delete one user",
     status_code=status.HTTP_204_NO_CONTENT,
 )
 async def delete_user(id: PydanticObjectId):
-    return await users.delete_user(user_id=PydanticObjectId(id))
+    return await users.delete_user_account(user_id=PydanticObjectId(id))
 
 
 if settings.USE_GRIDFS_STORAGE:

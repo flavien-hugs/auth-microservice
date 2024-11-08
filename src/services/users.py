@@ -5,13 +5,14 @@ from typing import Sequence
 
 from beanie import PydanticObjectId
 from fastapi import status
+from fastapi.responses import JSONResponse
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
 from slugify import slugify
 
 from src.common.helpers.exceptions import CustomHTTException
 from src.models import Role, User
-from src.schemas import CreateUser, UpdateUser
+from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.shared.error_codes import RoleErrorCode, UserErrorCode
 from src.shared.utils import password_hash
 from .roles import get_one_role
@@ -24,13 +25,20 @@ template_env = Environment(loader=template_loader, autoescape=select_autoescape(
 
 
 async def check_if_email_exist(email: EmailStr) -> bool:
-    if await User.find_one({"email": email}).exists():
+    if await User.find_one({"email": email, "is_active": True}).exists():
         raise CustomHTTException(
             code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST,
             message_error=f"User with email '{email}' already exists",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-    return True
+    elif await User.find_one({"email": email, "is_active": False}).exists():
+        raise CustomHTTException(
+            code_error=UserErrorCode.USER_ACCOUND_DESABLE,
+            message_error=f"User account with email '{email}' is disabled." f" Please request to activate the account.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+    else:
+        return True
 
 
 async def create_user(user_data: CreateUser) -> User:
@@ -96,9 +104,23 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
         await get_one_role(role_id=PydanticObjectId(update_user.role))
 
     user = await get_one_user(user_id=user_id)
-    update_data = update_user.model_dump(exclude_none=True, exclude_unset=True)
+    update_data = update_user.model_dump(exclude_unset=True)
 
     if "attributes" in update_data:
+        existing_attribute_keys = set(user.attributes.keys())
+        _log.info(f"Existing keys --> {existing_attribute_keys}")
+
+        new_keys = set(update_data.get("attributes", {}).keys())
+        _log.info(f"New keys --> {new_keys}")
+
+        if not new_keys.issubset(existing_attribute_keys):
+            added_keys = new_keys.difference(existing_attribute_keys)
+            raise CustomHTTException(
+                code_error=UserErrorCode.INVALID_ATTRIBUTES,
+                message_error=f"Unauthorized addition of new keys: {', '.join(added_keys)}.",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         update_data["attributes"] = {**user.attributes, **update_data["attributes"]}
 
     updated_user_doc = await user.set({"updated_at": datetime.now(tz=UTC), **update_data})
@@ -107,7 +129,16 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
     return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
 
 
-async def delete_user(user_id: PydanticObjectId) -> None:
+async def update_user_password(user_id: PydanticObjectId, payload: UpdatePassword):
+    user = await get_one_user(user_id=user_id)
+    updated_user_doc = await user.set(
+        {"updated_at": datetime.now(tz=UTC), "password": password_hash(payload.confirm_password)}
+    )
+    role = await get_one_role(role_id=PydanticObjectId(updated_user_doc.role))
+    return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
+
+
+async def delete_user_account(user_id: PydanticObjectId) -> None:
     user = await get_one_user(user_id=user_id)
     if user.is_primary:
         raise CustomHTTException(
@@ -116,6 +147,15 @@ async def delete_user(user_id: PydanticObjectId) -> None:
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     await user.set({"is_active": False})
+
+
+async def activate_user_account(user_id: PydanticObjectId) -> JSONResponse:
+    user = await get_one_user(user_id=user_id)
+    await user.set({"is_active": True})
+    return JSONResponse(
+        content={"message": "User account activated successfully."},
+        status_code=status.HTTP_200_OK,
+    )
 
 
 async def delete_many_users(user_ids: Sequence[PydanticObjectId]) -> None:
