@@ -47,6 +47,9 @@ class AuthBaseConfig(BaseSettings):
     CACHE_DB_URL: str = Field(default="redis://redis:6379/0", alias="CACHE_DB_URL")
     EXPIRE_CACHE: Optional[PositiveInt] = Field(default=500, alias="EXPIRE_CACHE")
 
+    # MIDDLEWARE CONFIG
+    COMPRESS_MIN_SIZE: Optional[PositiveInt] = Field(default=1_000, alias="COMPRESS_MIN_SIZE")
+
 
 @lru_cache
 def get_settings() -> AuthBaseConfig:
