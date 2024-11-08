@@ -5,6 +5,7 @@ from typing import TypedDict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.encoders import jsonable_encoder
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi_pagination import add_pagination
 from httpx import AsyncClient
@@ -18,7 +19,7 @@ from src.common.helpers.caching import init_redis_cache
 from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exceptions import setup_exception_handlers
 from src.config import settings, shutdown_db, startup_db
-from src.models import Params, Role, User, LoginLog
+from src.models import LoginLog, Params, Role, User
 from src.routers import auth_router, param_router, perm_router, role_router, user_router
 from src.services import roles, users
 from src.shared import blacklist_token
@@ -56,6 +57,9 @@ app: FastAPI = FastAPI(
     redirect_slashes=False,
     root_path_in_servers=False,
 )
+
+# Compress responses larger than 1000 bytes
+app.add_middleware(GZipMiddleware, minimum_size=int(settings.COMPRESS_MIN_SIZE))
 
 
 @app.get("/", include_in_schema=False)

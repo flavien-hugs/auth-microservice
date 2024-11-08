@@ -13,10 +13,10 @@ from src.schemas import (
     RequestChangePassword,
     VerifyOTP,
 )
+from src.services.shared import send_otp
 from src.shared import otp_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash
-from .shared import send_otp
 
 
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
@@ -68,27 +68,36 @@ async def reset_password_completed_with_phonenumber(payload: ChangePasswordWithO
 
 
 async def signup_with_phonenumber(bg: BackgroundTasks, payload: RequestChangePassword):
+    STATUS_CODE_400 = status.HTTP_400_BAD_REQUEST
 
     if payload.phonenumber and compare_digest(payload.phonenumber, " "):
         raise CustomHTTException(
             code_error=UserErrorCode.USER_PHONENUMBER_EMPTY,
             message_error="The phonenumber cannot be empty.",
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=STATUS_CODE_400,
         )
 
     if payload.password and compare_digest(payload.password, " "):
         raise CustomHTTException(
             code_error=UserErrorCode.USER_PASSWORD_EMPTY,
             message_error="The password cannot be empty.",
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=STATUS_CODE_400,
         )
 
-    if await User.find_one({"phonenumber": payload.phonenumber}).exists():
-        raise CustomHTTException(
-            code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
-            message_error=f"This phone number '{payload.phonenumber}' is already taken.",
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
+    if user := await User.find_one({"phonenumber": payload.phonenumber}):
+        if user.is_active:
+            raise CustomHTTException(
+                code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
+                message_error=f"This phone number '{payload.phonenumber}' is already taken.",
+                status_code=STATUS_CODE_400,
+            )
+        else:
+            raise CustomHTTException(
+                code_error=UserErrorCode.USER_ACCOUND_DESABLE,
+                message_error=f"User account with phone number '{payload.phonenumber}' is disabled."
+                f" Please request to activate the account.",
+                status_code=STATUS_CODE_400,
+            )
 
     user_data_dict = payload.model_copy(update={"password": password_hash(payload.password)})
     temp_user = User(**user_data_dict.model_dump(), attributes={})

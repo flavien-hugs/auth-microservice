@@ -14,6 +14,7 @@ from src.shared.error_codes import UserErrorCode
 class PhonenumberModel(BaseModel):
     phonenumber: Optional[str] = Field(default=None, examples=["+2250151571396"])
 
+    @classmethod
     @field_validator("phonenumber", mode="before")
     def phonenumber_validation(cls, value):  # noqa: B902
         if value and not re.match(r"^\+?1?\d{9,15}$", value):
@@ -41,6 +42,7 @@ class CreateUser(UserBaseSchema):
             return value.lower()
         return value
 
+    @classmethod
     @field_validator("attributes", mode="before")
     def check_unique_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:  # noqa: B902
         if not isinstance(value, dict):

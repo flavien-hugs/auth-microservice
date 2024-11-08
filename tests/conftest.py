@@ -86,6 +86,19 @@ def mock_check_permissions_handler():
 
 
 @pytest.fixture(autouse=True)
+def mock_check_check_user_access_handler():
+    async def _check_user(request):
+        if request.path_params.get("id") or request.query_params.get("id"):
+            return True
+        else:
+            return False
+
+    with mock.patch("src.routers.users.CheckUserAccessHandler.__call__") as mock_call:
+        mock_call.side_effect = _check_user
+        yield mock_call
+
+
+@pytest.fixture(autouse=True)
 def mock_request():
     """Fixture pour simuler l'objet Request avec un User-Agent."""
 
@@ -114,7 +127,7 @@ def mock_tracking(autouse=True):
 
 @pytest.fixture(autouse=True)
 async def http_client_api(mock_app_instance, clean_db):
-    async with AsyncClient(app=mock_app_instance, base_url="http://auth.localhost.com") as client:
+    async with AsyncClient(app=mock_app_instance, base_url="http://localhost.com") as client:
         yield client
 
 
@@ -174,6 +187,7 @@ async def fake_role_collection(fixture_models, fake_role_data):
 def fake_user_data(fake_role_collection, fake_data):
     return {
         "email": fake_data.unique.email().lower(),
+        "phonenumber": "+2250101010101",
         "fullname": fake_data.name(),
         "role": str(fake_role_collection.id),
         "attributes": {"city": fake_data.city()},

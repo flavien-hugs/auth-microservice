@@ -44,7 +44,7 @@ async def login(bg: BackgroundTasks, request: Request, payload: LoginUser) -> JS
     identifier: Optional[str] = payload.email if is_email else payload.phonenumber
 
     if not identifier:
-        field = "email" if is_email else "phone number"
+        field = "email" if is_email else "phonenumber"
         raise CustomHTTException(
             code_error=AuthErrorCode.AUTH_INVALID_CREDENTIALS,
             message_error=f"{field.capitalize()} is required for login.",
@@ -63,16 +63,15 @@ async def login(bg: BackgroundTasks, request: Request, payload: LoginUser) -> JS
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
     user_data = user.model_dump(by_alias=True, mode="json", exclude={"password", "attributes", "is_primary"})
+    user_data.update(
+        {"role": role.model_dump(by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"})}
+    )
 
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-
-    response_data["user"]["role"] = role.model_dump(
-        by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"}
-    )
 
     await tracking.insert_log(task=bg, request=request, user_id=user.id)
 

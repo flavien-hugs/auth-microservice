@@ -100,8 +100,8 @@ async def check_validate_access_token(token: str):
 
 
 @auth_router.put("/change-password/{id}", summary="Set up a password for the user.", status_code=status.HTTP_200_OK)
-async def change_password(id: str, payload: ChangePassword = Body(...)):
-    return await auth.change_password(user_id=PydanticObjectId(id), payload=payload)
+async def change_password(id: PydanticObjectId, payload: ChangePassword = Body(...)):
+    return await auth.change_password(user_id=id, payload=payload)
 
 
 if bool(settings.REGISTER_WITH_EMAIL):

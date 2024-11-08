@@ -30,6 +30,7 @@ class UserErrorCode(StrEnum):
     UPLOAD_FILE_ERROR = "users/upload-file-error"
     USER_DELETE_PRIMARY = "users/can-not-delete-user"
     INVALID_ATTRIBUTES = "users/invalid-attributes"
+    USER_UNAUTHORIZED_PERFORM_ACTION = "users/unauthorized-action"
 
 
 class RoleErrorCode(StrEnum):

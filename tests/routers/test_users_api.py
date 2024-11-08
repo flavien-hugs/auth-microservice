@@ -245,6 +245,7 @@ async def test_delete_user_success(
     fake_user_collection,
     mock_verify_access_token,
     mock_check_permissions_handler,
+    mock_check_check_user_access_handler,
 ):
     user_id = fake_user_collection.id
 
@@ -254,3 +255,5 @@ async def test_delete_user_success(
     mock_verify_access_token.assert_called_once()
     mock_verify_access_token.assert_called_once_with("valid_token")
     mock_check_permissions_handler.assert_called_once()
+
+    mock_check_check_user_access_handler.assert_called_once()
