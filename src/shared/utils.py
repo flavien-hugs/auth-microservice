@@ -3,7 +3,7 @@ import os
 from enum import StrEnum
 from pathlib import Path
 from secrets import compare_digest
-from typing import Callable, Optional, TypeVar
+from typing import Any, Callable, Optional, TypeVar
 
 import pyotp
 from fastapi import Request, Response
@@ -14,6 +14,7 @@ from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
+from slugify import slugify
 
 disable_installed_extensions_check()
 
@@ -31,35 +32,37 @@ class SortEnum(StrEnum):
     DESC = "desc"
 
 
-def custom_key_builder(
-    func: Callable,
-    namespace: str = "",
-    *,
-    request: Optional[Request] = None,
-    response: Optional[Response] = None,
-    **kwargs,
-):
-    token_value = ""
-    query_params_str = ""
-    url_path = ""
+def custom_key_builder(service_name: str, *args, **kwargs):
+    def _key_builder(
+        func: Callable[..., Any],
+        namespace: str,
+        request: Optional[Request] = None,
+        response: Optional[Response] = None,
+        *args,
+        **kwargs,
+    ) -> str:
+        token_value = ""
+        query_params_str = ""
+        url_path = ""
 
-    if request is not None:
-        # Récupérer le token d'autorisation depuis les en-têtes de la requête
-        if (token := request.headers.get("Authorization")) is not None:
-            token_value = token.split()[1] if len(token.split()) > 1 else token
-        else:
-            # Récupérer le premier paramètre de requête si le token n'est pas dans les en-têtes
-            token_value = next(iter(request.query_params.values()), "")
+        if request is not None:
+            # Récupérer le token d'autorisation depuis les en-têtes de la requête
+            if (token := request.headers.get("Authorization")) is not None:
+                token_value = token.split()[1] if len(token.split()) > 1 else token
+            else:
+                # Récupérer le premier paramètre de requête si le token n'est pas dans les en-têtes
+                token_value = next(iter(request.query_params.values()), "")
 
-        # Convertir les paramètres de requête en chaîne de caractères triée
-        query_params_str = repr(sorted(request.query_params.items()))
-        # Récupérer le chemin de l'URL de la requête
-        url_path = request.url.path
+            # Convertir les paramètres de requête en chaîne de caractères triée
+            query_params_str = repr(sorted(request.query_params.items()))
+            # Récupérer le chemin de l'URL de la requête
+            url_path = request.url.path
 
-    # Construire la clé personnalisée
-    result = f"{token_value}:{query_params_str}:{url_path}"
+        slugify_service_name = slugify(service_name)
 
-    return result
+        return ":".join([slugify_service_name, token_value, query_params_str, url_path])
+
+    return _key_builder
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

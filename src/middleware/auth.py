@@ -15,7 +15,7 @@ from slugify import slugify
 from src.common.helpers.caching import custom_key_builder as cache_key_builder
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import jwt_settings, settings
-from src.services.roles import get_one_role
+from src.services import users
 from src.shared import blacklist_token
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 
@@ -119,7 +119,14 @@ class CustomAccessBearer:
             ) from err
 
     @classmethod
-    @cache(expire=settings.EXPIRE_CACHE, key_builder=cache_key_builder(settings.APP_NAME + "check-permissions"))  # noqa
+    @cache(
+        expire=settings.EXPIRE_CACHE,
+        key_builder=cache_key_builder(
+            settings.APP_NAME + "check-permissions",
+            use_query_params=True,
+            use_path_params=False,
+        ),
+    )
     async def check_permissions(cls, token: str, required_permissions: Set[str] = ()) -> bool:
         """
         Checks if the token has the required permissions.
@@ -134,13 +141,12 @@ class CustomAccessBearer:
         """
 
         docode_token = cls.decode_access_token(token)
-        user_role_id = docode_token.get("subject", {}).get("role", {}).get("_id")
-
-        role = await get_one_role(role_id=user_role_id)
-
-        if role.slug == slugify(settings.DEFAULT_ADMIN_ROLE):
+        user_role_name = docode_token.get("subject", {}).get("role", {}).get("slug")
+        if user_role_name == slugify(settings.DEFAULT_ADMIN_ROLE):
             return True
 
+        user_role = docode_token.get("subject", {}).get("role", {}).get("_id")
+        role = await users.get_one_role(role_id=user_role)
         user_permissions = {perm["code"] for permissions in role.permissions for perm in permissions["permissions"]}
 
         if required_permissions & user_permissions:

@@ -1,7 +1,7 @@
 import logging
 import os
 from datetime import datetime, UTC
-from typing import Optional, Sequence, Set, List, Dict
+from typing import Dict, List, Optional, Sequence, Set
 
 from beanie import PydanticObjectId
 from fastapi_pagination import paginate
@@ -9,7 +9,9 @@ from pymongo import ASCENDING, DESCENDING
 from slugify import slugify
 from starlette import status
 
+from src.common.helpers.caching import delete_custom_key
 from src.common.helpers.exceptions import CustomHTTException
+from src.config import settings
 from src.models import Role, User
 from src.schemas import RoleModel
 from src.shared.error_codes import RoleErrorCode
@@ -18,6 +20,8 @@ from .perms import get_all_permissions
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+service_appname_slug = slugify(settings.APP_NAME)
 
 
 async def get_formatted_permissions() -> List[Dict]:
@@ -128,6 +132,9 @@ async def assign_permissions_to_role(role_id: PydanticObjectId, permission_codes
             new_permissions.append({"service_info": service_info, "permissions": service_permissions})
     if not new_permissions:
         return await role.update({"$set": {"permissions": old_permissions}})
+
+    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "check-permissions")
+    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "access")
 
     return await role.update({"$addToSet": {"permissions": {"$each": new_permissions}}})
 
