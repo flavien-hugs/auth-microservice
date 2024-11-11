@@ -3,8 +3,10 @@ from typing import Optional, Set
 from beanie import PydanticObjectId
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, status
 from fastapi_cache.decorator import cache
+from slugify import slugify
 
 from src.config import enable_endpoint, settings
+from src.common.helpers.caching import custom_key_builder
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import (
@@ -21,9 +23,10 @@ from src.schemas import (
 )
 from src.services import auth
 from src.shared import mail_service, sms_service
-from src.shared.utils import custom_key_builder
 
 auth_router = APIRouter(prefix="", tags=["AUTH"], redirect_slashes=False)
+
+service_appname_slug = slugify(settings.APP_NAME)
 
 
 @auth_router.post("/signup", summary="Signup", status_code=status.HTTP_201_CREATED)
@@ -81,7 +84,7 @@ async def logout(request: Request):
     summary="Check user access",
     status_code=status.HTTP_200_OK,
 )
-@cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder)  # noqa
+@cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder(service_appname_slug + "access"))
 async def check_access(
     token: str = Depends(AuthorizedHTTPBearer),
     permission: Set[str] = Query(..., title="Permission to check"),
@@ -94,7 +97,7 @@ async def check_access(
     summary="Check validate access token",
     status_code=status.HTTP_200_OK,
 )
-@cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder)  # noqa
+@cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder(service_appname_slug + "validate"))
 async def check_validate_access_token(token: str):
     return await auth.validate_access_token(token=token)
 

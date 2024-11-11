@@ -6,14 +6,15 @@ from fastapi import BackgroundTasks, Request, status
 from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
+from src.common.helpers.caching import delete_custom_key
 from src.common.helpers.exceptions import CustomHTTException
 from src.config import settings
 from src.middleware import CustomAccessBearer
 from src.models import User
 from src.schemas import ChangePassword, LoginUser
+from src.services.roles import get_one_role
 from src.services.tracker import tracking
 from src.services.users import get_one_user
-from src.services.roles import get_one_role
 from src.shared import blacklist_token
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash, verify_password
@@ -82,6 +83,10 @@ async def logout(request: Request) -> JSONResponse:
     authorization = request.headers.get("Authorization")
     token = authorization.split()[1]
     await blacklist_token.add_blacklist_token(token)
+
+    await delete_custom_key(settings.APP_NAME + "access")
+    await delete_custom_key(settings.APP_NAME + "validate")
+
     return JSONResponse(content={"message": "Logout successfully !"}, status_code=status.HTTP_200_OK)
 
 

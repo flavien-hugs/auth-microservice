@@ -7,7 +7,6 @@ from pymongo import ASCENDING, DESCENDING
 
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
-from src.common.helpers.caching import delete_custom_key
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
@@ -142,6 +141,4 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     status_code=status.HTTP_200_OK,
 )
 async def manage_permission_to_role(id: PydanticObjectId, payload: Set[str] = Body(...)):
-    result = await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
-    await delete_custom_key(settings.APP_NAME + "check-permissions")
-    return result
+    return await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)

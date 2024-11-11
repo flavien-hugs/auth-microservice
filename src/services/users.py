@@ -10,7 +10,9 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
 from slugify import slugify
 
+from src.common.helpers.caching import delete_custom_key
 from src.common.helpers.exceptions import CustomHTTException
+from src.config import settings
 from src.models import Role, User
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.shared.error_codes import RoleErrorCode, UserErrorCode
@@ -110,14 +112,13 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
         existing_attribute_keys = set(user.attributes.keys())
         _log.info(f"Existing keys --> {existing_attribute_keys}")
 
-        new_keys = set(update_data.get("attributes", {}).keys())
+        new_keys = set(update_data.get("attributes", {}).keys()) - existing_attribute_keys
         _log.info(f"New keys --> {new_keys}")
 
-        if not new_keys.issubset(existing_attribute_keys):
-            added_keys = new_keys.difference(existing_attribute_keys)
+        if new_keys:
             raise CustomHTTException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
-                message_error=f"Unauthorized addition of new keys: {', '.join(added_keys)}.",
+                message_error=f"Unauthorized addition of new keys: {', '.join(new_keys)}.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -152,6 +153,10 @@ async def delete_user_account(user_id: PydanticObjectId) -> None:
 async def activate_user_account(user_id: PydanticObjectId) -> JSONResponse:
     user = await get_one_user(user_id=user_id)
     await user.set({"is_active": True})
+
+    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "access")
+    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "validate")
+
     return JSONResponse(
         content={"message": "User account activated successfully."},
         status_code=status.HTTP_200_OK,
