@@ -109,6 +109,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
     update_data = update_user.model_dump(exclude_unset=True)
 
     if "attributes" in update_data:
+        """
         existing_attribute_keys = set(user.attributes.keys())
         _log.info(f"Existing keys --> {existing_attribute_keys}")
 
@@ -121,7 +122,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
                 message_error=f"Unauthorized addition of new keys: {', '.join(new_keys)}.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
+        """
         update_data["attributes"] = {**user.attributes, **update_data["attributes"]}
 
     updated_user_doc = await user.set({"updated_at": datetime.now(tz=UTC), **update_data})
