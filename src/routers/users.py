@@ -120,7 +120,7 @@ async def listing_users(
     status_code=status.HTTP_200_OK,
 )
 @user_router.get(
-    "/_i_{id}",
+    "/{id}/_read",
     response_model=UserOut,
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Get single user (internal)",
