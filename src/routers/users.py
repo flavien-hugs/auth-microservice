@@ -11,7 +11,7 @@ from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckU
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.services import files, roles, users
-from src.shared.utils import customize_page, get_fs, SortEnum
+from src.shared.utils import AccountAction, customize_page, get_fs, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
@@ -169,9 +169,11 @@ async def update_user_password(id: PydanticObjectId, payload: UpdatePassword = B
         Depends(CheckUserAccessHandler(key="id")),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
+    summary="Activate or deactivate user account",
+    status_code=status.HTTP_202_ACCEPTED,
 )
-async def activate_user_account(id: PydanticObjectId):
-    return await users.activate_user_account(user_id=PydanticObjectId(id))
+async def activate_user_account(id: PydanticObjectId, action: AccountAction):
+    return await users.activate_user_account(user_id=PydanticObjectId(id), action=action)
 
 
 @user_router.delete(

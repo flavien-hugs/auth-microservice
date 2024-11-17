@@ -16,7 +16,7 @@ from src.config import settings
 from src.models import Role, User
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.shared.error_codes import RoleErrorCode, UserErrorCode
-from src.shared.utils import password_hash
+from src.shared.utils import AccountAction, password_hash
 from .roles import get_one_role
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -151,15 +151,18 @@ async def delete_user_account(user_id: PydanticObjectId) -> None:
     await user.set({"is_active": False})
 
 
-async def activate_user_account(user_id: PydanticObjectId) -> JSONResponse:
+async def activate_user_account(user_id: PydanticObjectId, action: AccountAction) -> JSONResponse:
     user = await get_one_user(user_id=user_id)
-    await user.set({"is_active": True})
+
+    is_active = True if action == AccountAction.ACTIVATE else False
+    await user.set({"is_active": is_active})
 
     await delete_custom_key(custom_key_prefix=settings.APP_NAME + "access")
     await delete_custom_key(custom_key_prefix=settings.APP_NAME + "validate")
 
+    message = "activated" if is_active else "deactivated"
     return JSONResponse(
-        content={"message": "User account activated successfully."},
+        content={"message": f"User account {message} successfully."},
         status_code=status.HTTP_200_OK,
     )
 

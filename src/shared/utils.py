@@ -28,8 +28,13 @@ T = TypeVar("T")
 
 
 class SortEnum(StrEnum):
-    ASC = "asc"
-    DESC = "desc"
+    ASC: str = "asc"
+    DESC: str = "desc"
+
+
+class AccountAction(StrEnum):
+    ACTIVATE: str = "activate"
+    DEACTIVATE: str = "deactivate"
 
 
 def custom_key_builder(service_name: str, *args, **kwargs):
