@@ -10,7 +10,7 @@ from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
-from src.services import files, roles, users
+from src.services import files, users
 from src.shared.utils import AccountAction, customize_page, get_fs, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
@@ -128,9 +128,7 @@ async def listing_users(
     include_in_schema=False,
 )
 async def get_user(id: PydanticObjectId):
-    user = await users.get_one_user(user_id=PydanticObjectId(id))
-    role = await roles.get_one_role(role_id=user.role)
-    result = user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True, mode="json")}})
+    result = await users.get_one_user(user_id=PydanticObjectId(id))
     return result
 
 
