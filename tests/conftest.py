@@ -26,6 +26,14 @@ def mock_init_cache() -> Generator[Any, Any, None]:
     FastAPICache.reset()
 
 
+@pytest.fixture(autouse=True)
+def mock_redis_client():
+    with mock.patch("src.common.helpers.caching.redis_client") as mock_redis:
+        mock_redis.keys = mock.AsyncMock(return_value=[b"authtestaccess1", b"authtestaccess2"])
+        mock_redis.delete = mock.AsyncMock(return_value=True)
+        yield mock_redis
+
+
 @pytest.fixture()
 def fixture_models():
     from src import models

@@ -46,7 +46,6 @@ class TestCustomAccessBearer:
         result = await self.custom_access_token.verify_access_token("fake_access_token")
         assert result is True
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_token_expired(self, mock_decode_access_token, mock_jwt_settings):
@@ -59,7 +58,6 @@ class TestCustomAccessBearer:
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     @mock.patch("src.middleware.auth.blacklist_token")
@@ -75,7 +73,6 @@ class TestCustomAccessBearer:
         mock_blacklist.is_token_blacklisted.assert_awaited_once_with("valid_token")
         assert result is True
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     @mock.patch("src.middleware.auth.blacklist_token")
@@ -93,7 +90,6 @@ class TestCustomAccessBearer:
         assert exc.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc.value.message_error == "Token has expired !"
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     @mock.patch("src.middleware.auth.blacklist_token")
@@ -110,7 +106,6 @@ class TestCustomAccessBearer:
         assert exc.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc.value.message_error == "Invalid token"
 
-    @pytest.mark.skip
     @pytest.mark.asyncio
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_with_token(self, mock_decode_access_token, mock_jwt_settings):
@@ -118,7 +113,7 @@ class TestCustomAccessBearer:
         with pytest.raises(CustomHTTException) as exc_info:
             await self.custom_access_token.verify_access_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
-        assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKENx
+        assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN
 
 
 class TestAuthorizeHTTPBearer:
