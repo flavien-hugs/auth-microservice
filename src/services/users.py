@@ -95,7 +95,6 @@ async def get_one_user(user_id: PydanticObjectId):
             message_error=f"User with '{user_id}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-
     role = await get_one_role(role_id=user.role)
     result = user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True, mode="json")}})
     return result
