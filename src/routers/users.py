@@ -10,7 +10,7 @@ from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
-from src.services import files, users
+from src.services import files, roles, users
 from src.shared.utils import AccountAction, customize_page, get_fs, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
@@ -48,7 +48,7 @@ async def create_user(request: Request, payload: CreateUser = Body(...)):
 
 @user_router.get(
     "",
-    response_model=customize_page(User),
+    response_model=customize_page(UserOut),
     dependencies=[
         Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
@@ -96,16 +96,21 @@ async def listing_users(
 
     sorted = DESCENDING if sorting == SortEnum.DESC else ASCENDING
     users_list = await User.find(search, sort=[("created_at", sorted)]).to_list()
-    users = [
-        user.model_dump(
-            by_alias=True,
-            mode="json",
-            exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
-        )
-        for user in users_list
-        if user.is_primary is False
-    ]
-    return await paginate(users)
+    users_output = []
+    for user in users_list:
+        if user.is_primary is False:
+            role_data = await roles.get_one_role(role_id=user.role)
+            users_output.append(
+                UserOut(
+                    **user.model_dump(
+                        by_alias=True,
+                        mode="json",
+                        exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+                    ),
+                    extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None}
+                )
+            )
+    return await paginate(users_output)
 
 
 @user_router.get(
@@ -128,7 +133,16 @@ async def listing_users(
     include_in_schema=False,
 )
 async def get_user(id: PydanticObjectId):
-    result = await users.get_one_user(user_id=PydanticObjectId(id))
+    user_data = await users.get_one_user(user_id=PydanticObjectId(id))
+    role_data = await roles.get_one_role(role_id=user_data.role)
+    result = UserOut(
+        **user_data.model_dump(
+            by_alias=True,
+            mode="json",
+            exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+        ),
+        extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None}
+    )
     return result
 
 
