@@ -5,8 +5,8 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, s
 from fastapi_cache.decorator import cache
 from slugify import slugify
 
-from src.config import enable_endpoint, settings
 from src.common.helpers.caching import custom_key_builder
+from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import (
@@ -84,7 +84,6 @@ async def logout(request: Request):
     summary="Check user access",
     status_code=status.HTTP_200_OK,
 )
-@cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder(service_appname_slug + "access"))
 async def check_access(
     token: str = Depends(AuthorizedHTTPBearer),
     permission: Set[str] = Query(..., title="Permission to check"),
