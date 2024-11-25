@@ -5,8 +5,8 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, s
 from fastapi_cache.decorator import cache
 from slugify import slugify
 
+from src.common.helpers.caching import custom_key_builder, delete_custom_key
 from src.config import enable_endpoint, settings
-from src.common.helpers.caching import custom_key_builder
 from src.middleware import AuthorizedHTTPBearer
 from src.models import User
 from src.schemas import (
@@ -76,6 +76,8 @@ if not bool(settings.REGISTER_WITH_EMAIL):
     "/logout", dependencies=[Depends(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
 )
 async def logout(request: Request):
+    await delete_custom_key(service_appname_slug + "access")
+    await delete_custom_key(service_appname_slug + "validate")
     return await auth.logout(request)
 
 

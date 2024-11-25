@@ -4,13 +4,17 @@ from beanie import PydanticObjectId
 from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
+from slugify import slugify
 
+from src.common.helpers.caching import delete_custom_key
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
 from src.shared.utils import customize_page, SortEnum
+
+service_appname_slug = slugify(settings.APP_NAME)
 
 role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
 
@@ -141,4 +145,6 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     status_code=status.HTTP_200_OK,
 )
 async def manage_permission_to_role(id: PydanticObjectId, payload: Set[str] = Body(...)):
+    await delete_custom_key(service_appname_slug + "access")
+    await delete_custom_key(service_appname_slug + "validate")
     return await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
