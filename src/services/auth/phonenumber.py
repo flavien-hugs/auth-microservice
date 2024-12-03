@@ -17,6 +17,7 @@ from src.services.shared import send_otp
 from src.shared import otp_service
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
 from src.shared.utils import password_hash
+from src.services import roles
 
 
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
@@ -69,6 +70,8 @@ async def reset_password_completed_with_phonenumber(payload: ChangePasswordWithO
 
 async def signup_with_phonenumber(bg: BackgroundTasks, payload: RequestChangePassword):
     STATUS_CODE_400 = status.HTTP_400_BAD_REQUEST
+
+    await roles.get_one_role(role_id=payload.role)
 
     if payload.phonenumber and compare_digest(payload.phonenumber, " "):
         raise CustomHTTException(
