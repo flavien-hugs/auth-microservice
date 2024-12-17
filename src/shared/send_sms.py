@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict
+from typing import Any
 from urllib.parse import urlencode
 
 import httpx
@@ -25,7 +25,7 @@ class SendSMSHandler:
 
         self._headers = {"APIKEY": sms_config.SMS_API_KEY, "CLIENTID": sms_config.SMS_CLIENT_ID}
 
-    async def __call__(self, recipient: str, message: str, *args, **kwargs) -> Dict[str, Any]:
+    async def __call__(self, recipient: str, message: str, *args, **kwargs) -> dict[str, Any]:
         params = {"from": self._sender, "to": recipient, "type": self._sms_type, "message": message, "dlr": self._dlr}
 
         async with httpx.AsyncClient(follow_redirects=True) as client:

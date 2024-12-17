@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, UTC
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from beanie import PydanticObjectId
 from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
@@ -29,7 +29,7 @@ class SignupBaseModel(PhonenumberModel):
 
 class UserBaseSchema(SignupBaseModel):
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
-    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
+    attributes: Optional[dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
 
 
 class CreateUser(UserBaseSchema):
@@ -44,7 +44,7 @@ class CreateUser(UserBaseSchema):
 
     @classmethod
     @field_validator("attributes", mode="before")
-    def check_unique_attributes(cls, value: Dict[str, Any]) -> Dict[str, Any]:  # noqa: B902
+    def check_unique_attributes(cls, value: dict[str, Any]) -> dict[str, Any]:  # noqa: B902
         if not isinstance(value, dict):
             raise CustomHTTException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
@@ -71,11 +71,11 @@ class CreateUser(UserBaseSchema):
 class UpdateUser(BaseModel):
     role: Optional[PydanticObjectId] = Field(default=None, description="User role")
     fullname: Optional[StrictStr] = Field(default=None, examples=["John Doe"])
-    attributes: Optional[Dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
+    attributes: Optional[dict[str, Any]] = Field(default_factory=dict, examples=[{"key": "value"}])
 
     @classmethod
     @field_validator("attributes", mode="before")
-    def check_if_attributes_is_dict(cls, value: Dict[str, Any]) -> Dict[str, Any]:
+    def check_if_attributes_is_dict(cls, value: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(value, dict):
             raise CustomHTTException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
@@ -86,7 +86,7 @@ class UpdateUser(BaseModel):
 
     @classmethod
     @field_validator("attributes", mode="before")
-    def validate_attributes(cls, attrs: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_attributes(cls, attrs: dict[str, Any]) -> dict[str, Any]:
         validated_attributes = {}
         for k, value in attrs.items():
             slugified_key = slugify(k, separator="_")

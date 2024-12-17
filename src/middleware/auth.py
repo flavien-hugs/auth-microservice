@@ -1,6 +1,5 @@
 import logging
 from datetime import datetime, timedelta, timezone
-from typing import Set
 
 from fastapi import Request, status
 from fastapi.security import HTTPBearer
@@ -127,14 +126,14 @@ class CustomAccessBearer:
             use_path_params=False,
         ),
     )
-    async def check_permissions(cls, token: str, required_permissions: Set[str] = ()) -> bool:
+    async def check_permissions(cls, token: str, required_permissions: set[str] = ()) -> bool:
         """
         Checks if the token has the required permissions.
 
         :param token: The access token.
         :type token: str
         :param required_permissions: A set of required permissions.
-        :type required_permissions: Set[str]
+        :type required_permissions: set[str]
         :return: True if the user has the required permissions, otherwise raises a CustomHTTException.
         :rtype: bool
         :raises CustomHTTException: If the user doesn't have the required permissions.
@@ -200,7 +199,7 @@ class CheckPermissionsHandler:
     :type required_permissions: set
     """
 
-    def __init__(self, required_permissions: Set[str]):
+    def __init__(self, required_permissions: set[str]):
         self._required_permissions = required_permissions
 
     async def __call__(self, request: Request):

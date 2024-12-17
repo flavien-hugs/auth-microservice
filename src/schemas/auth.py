@@ -1,6 +1,6 @@
 import re
 from hmac import compare_digest
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, StrictBool
 from pydantic.config import ConfigDict
@@ -77,7 +77,7 @@ class LoginUser(BaseModel, CheckEmailOrPhone):
         ref_template: str = "#/$defs/{model}",
         schema_generator: Any = None,
         mode: JsonSchemaMode = "validation",
-    ) -> Dict:
+    ) -> dict:
         schema = super().model_json_schema(
             by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
         )

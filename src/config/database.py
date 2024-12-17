@@ -3,9 +3,8 @@ from typing import List, Type
 
 from beanie import Document, init_beanie
 from fastapi import FastAPI
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
-from src.common.helpers.mongodb import mongodb_client
 
+from src.common.helpers.mongodb import mongodb_client
 from .settings import get_settings
 
 logging.basicConfig(format="%(message)s", level=logging.INFO)
@@ -20,7 +19,6 @@ async def startup_db(app: FastAPI, models: List[Type[Document]]) -> None:
     db = client[settings.MONGO_DB]
 
     await init_beanie(database=db, document_models=models, multiprocessing_mode=True)
-    app.state.fs = AsyncIOMotorGridFSBucket(database=db, bucket_name=settings.MONGO_FS_BUCKET_NAME)
     _log.info("--> Database init successfully !")
 
 
