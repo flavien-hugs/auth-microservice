@@ -1,17 +1,16 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, File, Path, Query, Request, status, UploadFile
+from fastapi import APIRouter, Body, Depends, Query, Request, status
 from fastapi_pagination.async_paginator import paginate
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pymongo import ASCENDING, DESCENDING
 
 from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
-from src.services import files, roles, users
-from src.shared.utils import AccountAction, customize_page, get_fs, SortEnum
+from src.services import roles, users
+from src.shared.utils import AccountAction, customize_page, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
@@ -200,65 +199,3 @@ async def activate_user_account(id: PydanticObjectId, action: AccountAction):
 )
 async def delete_user(id: PydanticObjectId):
     return await users.delete_user_account(user_id=PydanticObjectId(id))
-
-
-if settings.USE_GRIDFS_STORAGE:
-    user_router.tags = ["USERS: PICTURES"]
-    user_router.prefix = "/pictures"
-
-    @user_router.put(
-        "",
-        dependencies=[
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
-        ],
-        summary="Upload user picture",
-        status_code=status.HTTP_200_OK,
-    )
-    async def upload(
-        request: Request,
-        user_id: PydanticObjectId,
-        file: UploadFile = File(...),
-        description: Optional[str] = Body(None, description="Description of the file"),
-        fs: AsyncIOMotorGridFSBucket = Depends(get_fs),
-    ):
-        result = await files.upload_file(request=request, user_id=user_id, description=description, file=file, fs=fs)
-        return result
-
-    @user_router.get(
-        "/{id}",
-        dependencies=[
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-read-user"})),
-        ],
-        summary="Download user picture",
-        status_code=status.HTTP_200_OK,
-    )
-    @user_router.get(
-        "/{id}/view",
-        summary="Show user picture",
-        status_code=status.HTTP_200_OK,
-    )
-    async def download(
-        request: Request, id: str = Path(..., description="File ID"), fs: AsyncIOMotorGridFSBucket = Depends(get_fs)
-    ):
-        if request.url.path.endswith("/show"):
-            return await files.get_file(id=id, fs=fs)
-        else:
-            return await files.download_file(id=id, fs=fs)
-
-    @user_router.delete(
-        "/{id}",
-        dependencies=[
-            Depends(AuthorizedHTTPBearer),
-            Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
-        ],
-        summary="Delete user picture",
-        status_code=status.HTTP_204_NO_CONTENT,
-    )
-    async def delete_picture(
-        user_id: PydanticObjectId,
-        id: str = Path(..., description="File ID"),
-        fs: AsyncIOMotorGridFSBucket = Depends(get_fs),
-    ):
-        return await files.delete_file(id=id, user_id=user_id, fs=fs)

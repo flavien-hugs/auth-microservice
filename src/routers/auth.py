@@ -52,8 +52,8 @@ if bool(settings.REGISTER_WITH_EMAIL):
 
 
 @auth_router.post("/login", summary="Login", status_code=status.HTTP_200_OK)
-async def login(bg: BackgroundTasks, request: Request, payload: LoginUser = Body(...)):
-    return await auth.login(bg, request, payload)
+async def login(request: Request, payload: LoginUser = Body(...)):
+    return await auth.login(request, payload)
 
 
 if not bool(settings.REGISTER_WITH_EMAIL):

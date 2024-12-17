@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import BackgroundTasks, Request, status
+from fastapi import Request, status
 from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
@@ -13,7 +13,6 @@ from src.middleware import CustomAccessBearer
 from src.models import User
 from src.schemas import ChangePassword, LoginUser
 from src.services.roles import get_one_role
-from src.services.tracker import tracking
 from src.services.users import get_one_user
 from src.shared import blacklist_token
 from src.shared.error_codes import AuthErrorCode, UserErrorCode
@@ -40,7 +39,7 @@ async def _validate_user_status(user: User) -> None:
         )
 
 
-async def login(bg: BackgroundTasks, request: Request, payload: LoginUser) -> JSONResponse:
+async def login(request: Request, payload: LoginUser) -> JSONResponse:
     is_email = settings.REGISTER_WITH_EMAIL
     identifier: Optional[str] = payload.email if is_email else payload.phonenumber
 
@@ -73,8 +72,6 @@ async def login(bg: BackgroundTasks, request: Request, payload: LoginUser) -> JS
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
-
-    await tracking.insert_log(task=bg, request=request, user_id=user.id)
 
     return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
