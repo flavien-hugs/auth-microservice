@@ -1,18 +1,18 @@
 from .auth import (
     ChangePassword,
-    UpdatePassword,
     ChangePasswordWithOTPCode,
     EmailModelMixin,
     LoginUser,
     ManageAccount,
     RequestChangePassword,
+    UpdatePassword,
     VerifyOTP,
 )
 from .mixins import FilterParams, SendEmailMessage, SendSmsMessage
 from .params import ParamsModel
 from .response import ResponseModelData
 from .roles import RoleModel
-from .users import CreateUser, Metadata, PhonenumberModel, UpdateUser, UserBaseSchema
+from .users import CreateUser, PhonenumberModel, UpdateUser, UserBaseSchema
 
 __all__ = [
     "UserBaseSchema",
@@ -32,6 +32,5 @@ __all__ = [
     "FilterParams",
     "SendEmailMessage",
     "SendSmsMessage",
-    "Metadata",
     "ChangePasswordWithOTPCode",
 ]

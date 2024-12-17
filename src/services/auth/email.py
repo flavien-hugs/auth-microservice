@@ -15,10 +15,10 @@ from src.schemas import (
     ChangePassword,
     UserBaseSchema,
 )
+from src.services.users import check_if_email_exist
 from src.shared import mail_service
 from src.shared.error_codes import UserErrorCode
 from src.shared.utils import password_hash
-from src.services.users import check_if_email_exist
 
 template_loader = PackageLoader("src", "templates")
 template_env = Environment(loader=template_loader, autoescape=select_autoescape(["html", "txt"]))
