@@ -19,7 +19,6 @@ from src.common.config.setup_permission import load_app_description, load_app_pe
 from src.common.helpers.caching import init_redis_cache
 from src.common.helpers.error_codes import AppErrorCode
 from src.common.helpers.exception import setup_exception_handlers
-from src.common.middleware import RateLimitMiddleware
 from src.config import settings
 from src.models import Params, Role, User
 from src.routers import auth_router, param_router, perm_router, role_router, user_router
@@ -62,10 +61,6 @@ app: FastAPI = FastAPI(
     root_path_in_servers=False,
 )
 
-# Compress responses larger than 1000 bytes
-app.add_middleware(GZipMiddleware, minimum_size=int(settings.COMPRESS_MIN_SIZE))
-app.add_middleware(RateLimitMiddleware, limit=settings.RATE_LIMIT_REQUEST, interval=settings.RATE_LIMIT_INTERVAL)
-
 
 @app.get("/", include_in_schema=False)
 async def read_root():
@@ -83,8 +78,10 @@ app.include_router(role_router)
 app.include_router(param_router)
 app.include_router(perm_router)
 add_pagination(app)
-
 setup_exception_handlers(app)
+
+# Compress responses larger than 1000 bytes
+app.add_middleware(GZipMiddleware, minimum_size=int(settings.COMPRESS_MIN_SIZE))
 
 
 @app.exception_handler(HTTPException)
