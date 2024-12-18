@@ -5,7 +5,7 @@ import pytest
 from starlette import status
 from starlette.responses import JSONResponse
 
-from src.common.helpers.permissions import CustomHTTException
+from src.common.depends.permission import CustomHTTPException
 from src.config import settings
 from src.schemas import LoginUser
 from src.services import auth
@@ -98,10 +98,10 @@ async def test_login_inactive_user(mock_find_one, fixture_models, mock_request):
 
         mock_find_one.return_value = fake_user
 
-        with pytest.raises(CustomHTTException) as excinfo:
+        with pytest.raises(CustomHTTPException) as excinfo:
             await auth.login(request=mock_request, payload=payload)
 
-        assert excinfo.typename == "CustomHTTException"
+        assert excinfo.typename == "CustomHTTPException"
         assert excinfo.value.status_code == status.HTTP_403_FORBIDDEN
         assert excinfo.value.code_error == UserErrorCode.USER_NOT_FOUND
         assert excinfo.value.message_error == (
@@ -128,7 +128,7 @@ async def test_login_invalid_password(mock_verify_password, mock_find_one, mock_
     mock_find_one.return_value = fake_user
     payload = LoginUser(email="test@example.com", password="wrongpassword")
 
-    with pytest.raises(CustomHTTException) as excinfo:
+    with pytest.raises(CustomHTTPException) as excinfo:
         await auth.login(mock_request, payload)
 
     assert excinfo.value.status_code == status.HTTP_400_BAD_REQUEST
@@ -151,7 +151,7 @@ async def test_login_invalid_identifier_not_found(mock_find_one, mock_request, f
 
         mock_find_one.return_value = None
 
-        with pytest.raises(CustomHTTException) as excinfo:
+        with pytest.raises(CustomHTTPException) as excinfo:
             await auth.login(request=mock_request, payload=payload)
 
         expected_message = "User does not exist."

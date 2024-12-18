@@ -1,11 +1,11 @@
 import os
 
 from src import settings
-from src.common.helpers.mongodb import mongodb_client
+from src.common.config.mongo_client import config_mongodb_client
 
 
 async def get_all_permissions():
-    client = await mongodb_client(settings.MONGODB_URI)
+    client = await config_mongodb_client(mongodb_uri=settings.MONGODB_URI)
 
     app_db_name, app_coll_name = os.getenv("APP_DESC_DB_COLLECTION").split(".")
     _, perm_coll_name = os.getenv("PERMS_DB_COLLECTION").split(".")

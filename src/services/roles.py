@@ -10,7 +10,7 @@ from slugify import slugify
 from starlette import status
 
 from src.common.helpers.caching import delete_custom_key
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import settings
 from src.models import Role, User
 from src.schemas import RoleModel
@@ -69,7 +69,7 @@ async def create_admin_role():
 
 async def get_one_role(role_id: PydanticObjectId) -> Role:
     if (role := await Role.get(document_id=PydanticObjectId(role_id))) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=RoleErrorCode.ROLE_NOT_FOUND,
             message_error=f"Role with '{role_id}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -81,7 +81,7 @@ async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role
     role = await get_one_role(role_id=role_id)
 
     if await Role.find_one({"_id": {"$ne": role_id}, "slug": slugify(update_role.name)}).exists():
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=RoleErrorCode.ROLE_ALREADY_EXIST,
             message_error=f"Role with name '{update_role.name}' already exists.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -99,7 +99,7 @@ async def update_role(role_id: PydanticObjectId, update_role: RoleModel) -> Role
 
 async def get_users_for_role(name: str, sorting: Optional[SortEnum] = SortEnum.DESC):
     if (role := await Role.find_one({"slug": slugify(name)})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=RoleErrorCode.ROLE_NOT_FOUND,
             message_error=f"Role with '{name}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,

@@ -7,7 +7,7 @@ from fastapi import Request, status
 from fastapi.security import HTTPAuthorizationCredentials
 from jose import JWTError
 
-from src.middleware.auth import AuthorizedHTTPBearer, CheckPermissionsHandler, CustomAccessBearer, CustomHTTException
+from src.middleware.auth import AuthorizedHTTPBearer, CheckPermissionsHandler, CustomAccessBearer, CustomHTTPException
 from src.shared.error_codes import AuthErrorCode
 
 
@@ -53,7 +53,7 @@ class TestCustomAccessBearer:
             "subject": {"is_active": False},
             "exp": datetime.now(timezone.utc).timestamp() - 600,
         }
-        with pytest.raises(CustomHTTException) as exc_info:
+        with pytest.raises(CustomHTTPException) as exc_info:
             await self.custom_access_token.verify_access_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN
@@ -82,7 +82,7 @@ class TestCustomAccessBearer:
         mock_blacklist.is_token_blacklisted = mock.AsyncMock(return_value=False)
         mock_decode_access_token.return_value = {"subject": {"is_active": True}, "exp": current_timestamp - 100}
 
-        with pytest.raises(CustomHTTException) as exc:
+        with pytest.raises(CustomHTTPException) as exc:
             await CustomAccessBearer.verify_access_token("expired_token")
 
         # Vérification des appels
@@ -98,7 +98,7 @@ class TestCustomAccessBearer:
         mock_blacklist.is_token_blacklisted = mock.AsyncMock(return_value=False)
         mock_decode_access_token.side_effect = JWTError("Invalid token")
 
-        with pytest.raises(CustomHTTException) as exc:
+        with pytest.raises(CustomHTTPException) as exc:
             await CustomAccessBearer.verify_access_token("invalid_token")
 
         # Vérification des appels
@@ -110,7 +110,7 @@ class TestCustomAccessBearer:
     @mock.patch("src.middleware.auth.CustomAccessBearer.decode_access_token")
     async def test_verify_access_with_token(self, mock_decode_access_token, mock_jwt_settings):
         mock_decode_access_token.side_effect = JWTError("Token is invalid")
-        with pytest.raises(CustomHTTException) as exc_info:
+        with pytest.raises(CustomHTTPException) as exc_info:
             await self.custom_access_token.verify_access_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN
@@ -138,7 +138,7 @@ class TestAuthorizeHTTPBearer:
         credentials = HTTPAuthorizationCredentials(scheme="Basic", credentials="valid_token")
 
         with mock.patch("fastapi.security.HTTPBearer.__call__", return_value=credentials):
-            with pytest.raises(CustomHTTException) as excinfo:
+            with pytest.raises(CustomHTTPException) as excinfo:
                 await self.auth_bearer(self.request)
 
             assert excinfo.value.code_error == AuthErrorCode.AUTH_MISSING_SCHEME
@@ -148,7 +148,7 @@ class TestAuthorizeHTTPBearer:
     @pytest.mark.asyncio
     async def test_token_expired(self):
         with mock.patch("fastapi.security.HTTPBearer.__call__", return_value=None):
-            with pytest.raises(CustomHTTException) as excinfo:
+            with pytest.raises(CustomHTTPException) as excinfo:
                 await self.auth_bearer(self.request)
 
             assert excinfo.value.code_error == AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN
@@ -177,7 +177,7 @@ class TestCheckPermissionsHandler:
     async def test_missing_authorization_header(self):
         self.request.headers = {}
 
-        with pytest.raises(CustomHTTException) as excinfo:
+        with pytest.raises(CustomHTTPException) as excinfo:
             await self.ckeck_permissions_handler(self.request)
 
         assert excinfo.value.code_error == AuthErrorCode.AUTH_MISSING_TOKEN
@@ -187,14 +187,14 @@ class TestCheckPermissionsHandler:
     @pytest.mark.asyncio
     @mock.patch("src.middleware.CustomAccessBearer.check_permissions")
     async def test_insufficient_permissions(self, mock_check_permissions):
-        mock_check_permissions.side_effect = CustomHTTException(
+        mock_check_permissions.side_effect = CustomHTTPException(
             code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
             message_error="You do not have the necessary permissions to access this resource.",
             status_code=status.HTTP_403_FORBIDDEN,
         )
         self.request.headers = {"Authorization": "Bearer valid_token"}
 
-        with pytest.raises(CustomHTTException) as excinfo:
+        with pytest.raises(CustomHTTPException) as excinfo:
             await self.ckeck_permissions_handler(self.request)
 
         mock_check_permissions.assert_called_once_with("valid_token", self.required_permissions)

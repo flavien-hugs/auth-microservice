@@ -7,12 +7,13 @@ from pymongo import ASCENDING, DESCENDING
 from slugify import slugify
 
 from src.common.helpers.caching import delete_custom_key
+from src.common.helpers.pagination import customize_page
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
-from src.shared.utils import customize_page, SortEnum
+from src.shared.utils import SortEnum
 
 service_appname_slug = slugify(settings.APP_NAME)
 

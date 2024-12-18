@@ -5,12 +5,13 @@ from fastapi import APIRouter, Body, Depends, Query, Request, status
 from fastapi_pagination.async_paginator import paginate
 from pymongo import ASCENDING, DESCENDING
 
+from src.common.helpers.pagination import customize_page
 from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.services import roles, users
-from src.shared.utils import AccountAction, customize_page, SortEnum
+from src.shared.utils import AccountAction, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
 
@@ -47,11 +48,11 @@ async def create_user(request: Request, payload: CreateUser = Body(...)):
 
 @user_router.get(
     "",
-    response_model=customize_page(UserOut),
     dependencies=[
         Depends(AuthorizedHTTPBearer),
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
     ],
+    response_model=customize_page(UserOut),
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Get all users",
     status_code=status.HTTP_200_OK,

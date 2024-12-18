@@ -1,18 +1,17 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Depends, Body, Query, status
+from fastapi import APIRouter, Body, Depends, Query, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 
+from src.common.helpers.pagination import customize_page
 from src.config import settings
-from src.models import Params
-from src.schemas.mixins import get_filter_params
-from src.schemas import ParamsModel, FilterParams
-from src.services import params
-from src.shared.utils import customize_page, SortEnum
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
-
+from src.models import Params
+from src.schemas import FilterParams, ParamsModel
+from src.services import params
+from src.shared.utils import SortEnum
 
 param_router = APIRouter(prefix="/parameters", tags=["PARAMETERS"])
 
@@ -46,7 +45,7 @@ async def create(payload: ParamsModel = Body(...)):
     status_code=status.HTTP_200_OK,
 )
 async def all(
-    filter: FilterParams = Depends(get_filter_params),
+    filter: FilterParams = Depends(FilterParams),
     sort: Optional[SortEnum] = Query(default=SortEnum.DESC, alias="sort", description="Sort by 'asc' or 'desc"),
 ):
     search = {}

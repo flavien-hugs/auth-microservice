@@ -12,7 +12,7 @@ from pwdlib.hashers.bcrypt import BcryptHasher
 from slugify import slugify
 
 from src.common.helpers.caching import custom_key_builder as cache_key_builder
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import jwt_settings, settings
 from src.services import users
 from src.shared import blacklist_token
@@ -71,7 +71,7 @@ class CustomAccessBearer:
                 algorithms=[jwt_settings.JWT_ALGORITHM],
             )
         except (jwt.ExpiredSignatureError, JWTError) as err:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN,
                 message_error=str(err),
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -86,14 +86,14 @@ class CustomAccessBearer:
 
         :param token: The access token to verify.
         :type token: str
-        :return: True if the token is valid, otherwise raises a CustomHTTException.
+        :return: True if the token is valid, otherwise raises a CustomHTTPException.
         :rtype: bool
-        :raises CustomHTTException: If the token is expired or invalid, raises a CustomHTTException.
+        :raises CustomHTTPException: If the token is expired or invalid, raises a CustomHTTPException.
         """
 
         try:
             if await blacklist_token.is_token_blacklisted(token):
-                raise CustomHTTException(
+                raise CustomHTTPException(
                     code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,
                     message_error="Token has expired !",
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -105,13 +105,13 @@ class CustomAccessBearer:
             token_exp = decode_token.get("exp", 0)
             if check_if_active is True and token_exp > current_timestamp:
                 return True
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,
                 message_error="Token has expired !",
                 status_code=status.HTTP_401_UNAUTHORIZED,
             )
         except (ExpiredSignatureError, JWTError) as err:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN,
                 message_error=str(err),
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -134,9 +134,9 @@ class CustomAccessBearer:
         :type token: str
         :param required_permissions: A set of required permissions.
         :type required_permissions: set[str]
-        :return: True if the user has the required permissions, otherwise raises a CustomHTTException.
+        :return: True if the user has the required permissions, otherwise raises a CustomHTTPException.
         :rtype: bool
-        :raises CustomHTTException: If the user doesn't have the required permissions.
+        :raises CustomHTTPException: If the user doesn't have the required permissions.
         """
 
         docode_token = cls.decode_access_token(token)
@@ -151,7 +151,7 @@ class CustomAccessBearer:
         if required_permissions & user_permissions:
             return True
         else:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_INSUFFICIENT_PERMISSION,
                 message_error="You do not have the necessary permissions to access this resource.",
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -174,7 +174,7 @@ class AuthorizedHTTPBearer(HTTPBearer):
     async def __call__(self, request: Request):
         if auth := await super().__call__(request=request):
             if not (auth.scheme.lower() == "bearer" and auth.scheme.startswith("Bearer")):
-                raise CustomHTTException(
+                raise CustomHTTPException(
                     code_error=AuthErrorCode.AUTH_MISSING_SCHEME,
                     message_error="Missing or invalid authentication scheme.",
                     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -182,7 +182,7 @@ class AuthorizedHTTPBearer(HTTPBearer):
             await CustomAccessBearer.verify_access_token(auth.credentials)
             return auth.credentials
 
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN,
             message_error="The token has expired.",
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -204,7 +204,7 @@ class CheckPermissionsHandler:
 
     async def __call__(self, request: Request):
         if not (authorization := request.headers.get("Authorization")):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_MISSING_TOKEN,
                 message_error="Missing token.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -214,7 +214,7 @@ class CheckPermissionsHandler:
 
 
 class CheckUserAccessHandler:
-    """ "
+    """
     Handler for checking user access based on the provided key and roles.
 
     This class provides a callable interface to check if a user has access to a resource
@@ -223,9 +223,9 @@ class CheckUserAccessHandler:
 
     :param key: The key to check for the resource.
     :rtype key: str
-    :return: True if the user has access to the resource, otherwise raises a CustomHTTException.
+    :return: True if the user has access to the resource, otherwise raises a CustomHTTPException.
     :rtype: bool
-    :raises CustomHTTException: If the user is not authorized to access the resource.
+    :raises CustomHTTPException: If the user is not authorized to access the resource.
     """
 
     def __init__(self, key: str):
@@ -234,7 +234,7 @@ class CheckUserAccessHandler:
     async def __call__(self, request: Request) -> str:
         authorization = request.headers.get("Authorization")
         if not authorization or not authorization.startswith("Bearer "):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_INVALID_TOKEN,
                 message_error="Invalid or missing token.",
                 status_code=status.HTTP_401_UNAUTHORIZED,
@@ -242,7 +242,7 @@ class CheckUserAccessHandler:
         token = authorization.split("Bearer ")[1]
 
         if not (value := request.path_params.get(self.key) or request.query_params.get(self.key)):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.USER_NOT_FOUND,
                 message_error=f"Resource '{value}' not found.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -257,7 +257,7 @@ class CheckUserAccessHandler:
         ):
             return value
         else:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.USER_UNAUTHORIZED_PERFORM_ACTION,
                 message_error="You are not authorized to perform this action.",
                 status_code=status.HTTP_403_FORBIDDEN,

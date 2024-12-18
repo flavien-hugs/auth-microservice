@@ -14,11 +14,13 @@ from starlette import status
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
-from src.common.helpers.appdesc import load_app_description, load_permissions
+from src.common.config import shutdown_db_client, startup_db_client
+from src.common.config.setup_permission import load_app_description, load_app_permissions
 from src.common.helpers.caching import init_redis_cache
 from src.common.helpers.error_codes import AppErrorCode
-from src.common.helpers.exceptions import setup_exception_handlers
-from src.config import settings, shutdown_db, startup_db
+from src.common.helpers.exception import setup_exception_handlers
+from src.common.middleware import RateLimitMiddleware
+from src.config import settings
 from src.models import Params, Role, User
 from src.routers import auth_router, param_router, perm_router, role_router, user_router
 from src.services import roles, users
@@ -33,10 +35,12 @@ class State(TypedDict):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[State]:
-    await startup_db(app=app, models=[User, Role, Params])
+    await startup_db_client(
+        app=app, mongodb_uri=settings.MONGODB_URI, database_name=settings.MONGO_DB, document_models=[User, Role, Params]
+    )
 
     await load_app_description(mongodb_client=app.mongo_db_client)
-    await load_permissions(mongodb_client=app.mongo_db_client)
+    await load_app_permissions(mongodb_client=app.mongo_db_client)
 
     await roles.create_admin_role()
     await users.create_admin_user()
@@ -46,7 +50,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
     await init_redis_cache(app_name=BASE_URL, cache_db_url=settings.CACHE_DB_URL)
 
     yield
-    await shutdown_db(app=app)
+    await shutdown_db_client(app=app)
 
 
 app: FastAPI = FastAPI(
@@ -60,6 +64,7 @@ app: FastAPI = FastAPI(
 
 # Compress responses larger than 1000 bytes
 app.add_middleware(GZipMiddleware, minimum_size=int(settings.COMPRESS_MIN_SIZE))
+app.add_middleware(RateLimitMiddleware, limit=settings.RATE_LIMIT_REQUEST, interval=settings.RATE_LIMIT_INTERVAL)
 
 
 @app.get("/", include_in_schema=False)

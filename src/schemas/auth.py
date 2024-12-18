@@ -2,12 +2,12 @@ import re
 from hmac import compare_digest
 from typing import Any, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator, StrictBool
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 from pydantic.config import ConfigDict
 from pydantic.json_schema import JsonSchemaMode
 from starlette import status
 
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import settings
 from src.shared.error_codes import AuthErrorCode
 from .users import PhonenumberModel, SignupBaseModel
@@ -30,11 +30,11 @@ class CheckEmailOrPhone:
 
 
 class EmailModelMixin(BaseModel):
-    email: Optional[EmailStr] = None
+    email: Optional[EmailStr] = Field(default=None, examples=["haf@example.com"], description="User email")
 
 
 class RequestChangePassword(SignupBaseModel, EmailModelMixin, CheckEmailOrPhone):
-    password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH)
+    password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH, description="User password")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -54,9 +54,11 @@ class VerifyOTP(PhonenumberModel):
 
 
 class LoginUser(BaseModel, CheckEmailOrPhone):
-    email: Optional[str] = None
-    phonenumber: Optional[str] = None
-    password: str
+    email: Optional[str] = Field(None, examples=["haf@exemple.com"], description="User email")
+    phonenumber: Optional[str] = Field(None, examples=["+2250151571396"], description="User phone number")
+    password: str = Field(
+        ..., min_length=settings.PASSWORD_MIN_LENGTH, examples=["password"], description="User password"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -97,7 +99,7 @@ class LoginUser(BaseModel, CheckEmailOrPhone):
         password = values.get("password")
         if len(password) > settings.PASSWORD_MIN_LENGTH:
             return values
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
             message_error="The password must be 6 characters or more.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -113,12 +115,12 @@ class LoginUser(BaseModel, CheckEmailOrPhone):
 
 
 class ManageAccount(BaseModel):
-    is_active: StrictBool = True
+    is_active: bool = Field(default=True, description="User is active")
 
 
 class ChangePassword(BaseModel):
-    new_password: str
-    confirm_password: str
+    new_password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH, description="New password")
+    confirm_password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH, description="Confirm password")
 
     @model_validator(mode="before")
     @classmethod
@@ -132,7 +134,7 @@ class ChangePassword(BaseModel):
             and len(confirm_password) < settings.PASSWORD_MIN_LENGTH
             and compare_digest(new_password, confirm_password) is False
         ):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
                 message_error="The two passwords did not match.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -157,7 +159,7 @@ class UpdatePassword(BaseModel):
             and confirm_password is not None
             and compare_digest(old_password, confirm_password) is True
         ):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
                 message_error="The old password cannot be the same as the new password.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -168,7 +170,7 @@ class UpdatePassword(BaseModel):
             and confirm_password is not None
             and compare_digest(new_password, confirm_password) is False
         ):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
                 message_error="The new password and the confirmation do not match.",
                 status_code=status.HTTP_400_BAD_REQUEST,

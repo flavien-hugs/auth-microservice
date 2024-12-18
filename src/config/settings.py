@@ -48,7 +48,9 @@ class AuthBaseConfig(BaseSettings):
     EXPIRE_CACHE: Optional[PositiveInt] = Field(default=500, alias="EXPIRE_CACHE")
 
     # MIDDLEWARE CONFIG
-    COMPRESS_MIN_SIZE: Optional[PositiveInt] = Field(default=1_000, alias="COMPRESS_MIN_SIZE")
+    COMPRESS_MIN_SIZE: Optional[int] = Field(default=1000, alias="COMPRESS_MIN_SIZE")
+    RATE_LIMIT_REQUEST: Optional[int] = Field(default=5, alias="RATE_LIMIT_REQUEST")
+    RATE_LIMIT_INTERVAL: Optional[int] = Field(default=3600, alias="RATE_LIMIT_INTERVAL")
 
 
 @lru_cache

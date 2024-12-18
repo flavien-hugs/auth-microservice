@@ -1,4 +1,3 @@
 [submodule "src/common"]
 	path = src/common
-	url = https://github.com/flavien-hugs/backend-common-code.git
-    branch = develop
+	url = https://github.com/flavien-hugs/common.git

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from jinja2 import Environment, PackageLoader, select_autoescape
 from pydantic import EmailStr
 
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import email_settings, settings
 from src.middleware.auth import CustomAccessBearer
 from src.models import User
@@ -26,7 +26,7 @@ template_env = Environment(loader=template_loader, autoescape=select_autoescape(
 
 async def request_password_reset_with_email(bg: BackgroundTasks, email: EmailStr) -> JSONResponse:
     if (user := await User.find_one({"email": email})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with email '{email}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -69,7 +69,7 @@ async def reset_password_completed_with_email(bg: BackgroundTasks, token: str, p
 
     check_user_email = decode_token.get("subject", {}).get("email")
     if (user := await User.find_one({"email": check_user_email})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with email '{check_user_email}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,

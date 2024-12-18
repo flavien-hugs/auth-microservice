@@ -1,5 +1,4 @@
 import re
-from datetime import datetime, UTC
 from typing import Any, Optional
 
 from beanie import PydanticObjectId
@@ -7,7 +6,7 @@ from pydantic import BaseModel, EmailStr, Field, field_validator, StrictStr
 from slugify import slugify
 from starlette import status
 
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.shared.error_codes import UserErrorCode
 
 
@@ -23,8 +22,8 @@ class PhonenumberModel(BaseModel):
 
 
 class SignupBaseModel(PhonenumberModel):
-    role: PydanticObjectId
-    password: Optional[str] = None
+    role: PydanticObjectId = Field(..., description="User role")
+    password: Optional[str] = Field(default=None, examples=["password"])
 
 
 class UserBaseSchema(SignupBaseModel):
@@ -33,7 +32,7 @@ class UserBaseSchema(SignupBaseModel):
 
 
 class CreateUser(UserBaseSchema):
-    email: Optional[EmailStr] = None
+    email: Optional[EmailStr] = Field(default=None, examples=["user@exemple.com"])
 
     @classmethod
     @field_validator("email", mode="before")
@@ -46,7 +45,7 @@ class CreateUser(UserBaseSchema):
     @field_validator("attributes", mode="before")
     def check_unique_attributes(cls, value: dict[str, Any]) -> dict[str, Any]:  # noqa: B902
         if not isinstance(value, dict):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
                 message_error="Attributes must be a dictionary.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -57,7 +56,7 @@ class CreateUser(UserBaseSchema):
         for k, _ in value.items():
             slugified_key = slugify(k, separator="_")
             if slugified_key in seen_keys:
-                raise CustomHTTException(
+                raise CustomHTTPException(
                     code_error=UserErrorCode.INVALID_ATTRIBUTES,
                     message_error=f"Duplicate key '{k}' ('{slugified_key}') in attributes.",
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -77,7 +76,7 @@ class UpdateUser(BaseModel):
     @field_validator("attributes", mode="before")
     def check_if_attributes_is_dict(cls, value: dict[str, Any]) -> dict[str, Any]:
         if not isinstance(value, dict):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
                 message_error="Attributes must be a dictionary.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -93,11 +92,3 @@ class UpdateUser(BaseModel):
             validated_attributes[slugified_key] = value
 
         return validated_attributes
-
-
-class Metadata(BaseModel):
-    file_id: str
-    filename: Optional[str] = None
-    content_type: Optional[str] = None
-    description: Optional[str] = None
-    upload_date: Optional[datetime] = datetime.now(tz=UTC)

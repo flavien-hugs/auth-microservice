@@ -11,7 +11,7 @@ from pydantic import EmailStr
 from slugify import slugify
 
 from src.common.helpers.caching import delete_custom_key
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import settings
 from src.models import Role, User
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
@@ -28,13 +28,13 @@ template_env = Environment(loader=template_loader, autoescape=select_autoescape(
 
 async def check_if_email_exist(email: EmailStr) -> bool:
     if await User.find_one({"email": email, "is_active": True}).exists():
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_EMAIL_ALREADY_EXIST,
             message_error=f"User with email '{email}' already exists",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     elif await User.find_one({"email": email, "is_active": False}).exists():
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_ACCOUND_DESABLE,
             message_error=f"User account with email '{email}' is disabled." f" Please request to activate the account.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,7 +54,7 @@ async def create_user(user_data: CreateUser) -> User:
 async def create_first_user(user_data: CreateUser) -> User:
     default_role = os.getenv("DEFAULT_ADMIN_ROLE")
     if (role := await Role.find_one({"slug": slugify(default_role)})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=RoleErrorCode.ROLE_NOT_FOUND,
             message_error=f"Role with name '{default_role}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -90,7 +90,7 @@ async def create_admin_user():
 
 async def get_one_user(user_id: PydanticObjectId):
     if (user := await User.get(document_id=PydanticObjectId(user_id))) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with '{user_id}' not found.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -116,7 +116,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
         _log.info(f"New keys --> {new_keys}")
 
         if new_keys:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.INVALID_ATTRIBUTES,
                 message_error=f"Unauthorized addition of new keys: {', '.join(new_keys)}.",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -142,7 +142,7 @@ async def update_user_password(user_id: PydanticObjectId, payload: UpdatePasswor
 async def delete_user_account(user_id: PydanticObjectId) -> None:
     user = await get_one_user(user_id=user_id)
     if user.is_primary:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_DELETE_PRIMARY,
             message_error="Primary user cannot be deleted.",
             status_code=status.HTTP_400_BAD_REQUEST,
