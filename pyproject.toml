@@ -21,6 +21,7 @@ pydantic-settings = "^2.5.2"
 pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}
 user-agents = "^2.2.0"
 python-multipart = "^0.0.12"
+cachetools = "^5.5.0"
 
 
 [tool.poetry.group.test.dependencies]

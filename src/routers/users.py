@@ -1,16 +1,18 @@
 from typing import Optional
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, status
 from fastapi_pagination.async_paginator import paginate
 from pymongo import ASCENDING, DESCENDING
 
 from src.common.helpers.pagination import customize_page
+from src.common.services.trailhub_client import send_event
 from src.config import settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler, CheckUserAccessHandler
 from src.models import User, UserOut
 from src.schemas import CreateUser, UpdatePassword, UpdateUser
 from src.services import roles, users
+from src.shared import API_TRAILHUB_ENDPOINT, API_VERIFY_ACCESS_TOKEN_ENDPOINT
 from src.shared.utils import AccountAction, SortEnum
 
 user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
@@ -39,11 +41,33 @@ user_router = APIRouter(prefix="/users", tags=["USERS"], redirect_slashes=False)
     summary="Add new user",
     include_in_schema=False,
 )
-async def create_user(request: Request, payload: CreateUser = Body(...)):
+async def create_user(request: Request, bg: BackgroundTasks, payload: CreateUser = Body(...)):
     if request.url.path.endswith("/add"):
-        return await users.create_first_user(payload)
+        result = await users.create_first_user(payload)
+        if settings.USE_TRACK_ACTIVITY_LOGS:
+            await send_event(
+                request=request,
+                bg=bg,
+                oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+                trailhub_url=API_TRAILHUB_ENDPOINT,
+                source=settings.APP_NAME.lower(),
+                message=f" has created a new user with the email '{payload.email}'",
+                user_id=None,
+            )
+        return result
     else:
-        return await users.create_user(payload)
+        result = await users.create_user(payload)
+        if settings.USE_TRACK_ACTIVITY_LOGS:
+            await send_event(
+                request=request,
+                bg=bg,
+                oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+                trailhub_url=API_TRAILHUB_ENDPOINT,
+                source=settings.APP_NAME.lower(),
+                message=f" has created a new user with the email '{payload.email}'",
+                user_id=None,
+            )
+        return result
 
 
 @user_router.get(
@@ -107,7 +131,7 @@ async def listing_users(
                         mode="json",
                         exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
                     ),
-                    extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None}
+                    extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None},
                 )
             )
     return await paginate(users_output)
@@ -141,9 +165,24 @@ async def get_user(id: PydanticObjectId):
             mode="json",
             exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
         ),
-        extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None}
+        extras={"role_info": {"name": role_data.name, "slug": role_data.slug} if role_data else None},
     )
     return result
+
+
+@user_router.get(
+    "/{id}/attributes",
+    dependencies=[
+        Depends(AuthorizedHTTPBearer),
+        Depends(CheckPermissionsHandler(required_permissions={"auth:can-display-user"})),
+    ],
+    response_model_exclude={"is_admin", "password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+    summary="Get single user attributes only",
+    status_code=status.HTTP_200_OK,
+)
+async def get_user_attributes(id: PydanticObjectId):
+    user_data = await users.get_one_user(user_id=PydanticObjectId(id))
+    return user_data.attributes
 
 
 @user_router.patch(
@@ -158,8 +197,20 @@ async def get_user(id: PydanticObjectId):
     summary="Update user information",
     status_code=status.HTTP_200_OK,
 )
-async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
-    return await users.update_user(user_id=PydanticObjectId(id), update_user=payload)
+async def update_user(request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: UpdateUser = Body(...)):
+    # TODO: Ajouter une vérification pour voir si l'utilisateur met à jour son propre compte.
+    result = await users.update_user(user_id=PydanticObjectId(id), update_user=payload)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has updated the user with the email '{id}:{payload.fullname}'",
+            user_id=str(str),
+        )
+    return result
 
 
 @user_router.put(
@@ -170,8 +221,22 @@ async def update_user(id: PydanticObjectId, payload: UpdateUser = Body(...)):
         Depends(CheckPermissionsHandler(required_permissions={"auth:can-update-user"})),
     ],
 )
-async def update_user_password(id: PydanticObjectId, payload: UpdatePassword = Body(...)):
-    return await users.update_user_password(user_id=PydanticObjectId(id), payload=payload)
+async def update_user_password(
+    request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: UpdatePassword = Body(...)
+):
+    # TODO: Ajouter une vérification pour voir si l'utilisateur met à jour son propre compte.
+    result = await users.update_user_password(user_id=PydanticObjectId(id), payload=payload)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has updated the password of the user with the email '{id}'",
+            user_id=str(id),
+        )
+    return result
 
 
 @user_router.put(
@@ -184,8 +249,21 @@ async def update_user_password(id: PydanticObjectId, payload: UpdatePassword = B
     summary="Activate or deactivate user account",
     status_code=status.HTTP_202_ACCEPTED,
 )
-async def activate_user_account(id: PydanticObjectId, action: AccountAction):
-    return await users.activate_user_account(user_id=PydanticObjectId(id), action=action)
+async def activate_user_account(request: Request, bg: BackgroundTasks, id: PydanticObjectId, action: AccountAction):
+    # TODO: Ajouter une vérification pour voir si l'utilisateur met à jour son propre compte.
+
+    result = await users.activate_user_account(user_id=PydanticObjectId(id), action=action)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has {'activate' if action == AccountAction.ACTIVATE else 'deactivate'} the account user '{id}'",
+            user_id=str(id),
+        )
+    return result
 
 
 @user_router.delete(
@@ -198,5 +276,16 @@ async def activate_user_account(id: PydanticObjectId, action: AccountAction):
     summary="Delete one user",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_user(id: PydanticObjectId):
-    return await users.delete_user_account(user_id=PydanticObjectId(id))
+async def delete_user(request: Request, bg: BackgroundTasks, id: PydanticObjectId):
+    result = await users.delete_user_account(user_id=PydanticObjectId(id))
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has deleted the user with the email '{id}'",
+            user_id=str(id),
+        )
+    return result
