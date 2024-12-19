@@ -1,24 +1,19 @@
 from typing import Optional
 
-from fastapi import Query
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class FilterParams(BaseModel):
-    type: Optional[str] = None
-    name: Optional[str] = None
-
-
-def get_filter_params(type: Optional[str] = Query(None), name: Optional[str] = Query(None)) -> FilterParams:
-    return FilterParams(type=type, name=name)
+    type: Optional[str] = Field(None, description="Type of the parameter")
+    name: Optional[str] = Field(None, description="Name of the parameter")
 
 
 class SendSmsMessage(BaseModel):
-    message: str
-    phone_number: str
+    message: str = Field(..., description="Message to send")
+    phone_number: str = Field(..., description="Phone number to send message")
 
 
 class SendEmailMessage(BaseModel):
-    subject: Optional[str] = None
-    message: str
-    recipients: EmailStr
+    subject: Optional[str] = Field(None, description="Subject of the email")
+    message: str = Field(..., description="Message to send")
+    recipients: EmailStr = Field(..., description="Email recipients")

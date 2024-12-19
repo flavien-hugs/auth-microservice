@@ -5,7 +5,7 @@ from fastapi import BackgroundTasks, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import JSONResponse
 
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.models import User
 from src.schemas import (
     ChangePasswordWithOTPCode,
@@ -23,14 +23,14 @@ from src.services import roles
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
 
     if payload.phonenumber and compare_digest(payload.phonenumber, " "):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_PHONENUMBER_EMPTY,
             message_error="The phonenumber cannot be empty.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
     if (user := await User.find_one({"phonenumber": payload.phonenumber})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with phone number '{payload.phonenumber}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -46,7 +46,7 @@ async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: 
 
 async def reset_password_completed_with_phonenumber(payload: ChangePasswordWithOTPCode) -> JSONResponse:
     if (user := await User.find_one({"phonenumber": payload.phonenumber})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with phone number '{payload.phonenumber}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -54,7 +54,7 @@ async def reset_password_completed_with_phonenumber(payload: ChangePasswordWithO
 
     otp_code_value = int(payload.code_otp)
     if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(otp_code_value):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_OTP_NOT_VALID,
             message_error=f"Code OTP '{otp_code_value}' invalid",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -74,14 +74,14 @@ async def signup_with_phonenumber(bg: BackgroundTasks, payload: RequestChangePas
     await roles.get_one_role(role_id=payload.role)
 
     if payload.phonenumber and compare_digest(payload.phonenumber, " "):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_PHONENUMBER_EMPTY,
             message_error="The phonenumber cannot be empty.",
             status_code=STATUS_CODE_400,
         )
 
     if payload.password and compare_digest(payload.password, " "):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_PASSWORD_EMPTY,
             message_error="The password cannot be empty.",
             status_code=STATUS_CODE_400,
@@ -89,13 +89,13 @@ async def signup_with_phonenumber(bg: BackgroundTasks, payload: RequestChangePas
 
     if user := await User.find_one({"phonenumber": payload.phonenumber}):
         if user.is_active:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.USER_PHONENUMBER_TAKEN,
                 message_error=f"This phone number '{payload.phonenumber}' is already taken.",
                 status_code=STATUS_CODE_400,
             )
         else:
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=UserErrorCode.USER_ACCOUND_DESABLE,
                 message_error=f"User account with phone number '{payload.phonenumber}' is disabled."
                 f" Please request to activate the account.",
@@ -116,7 +116,7 @@ async def signup_with_phonenumber(bg: BackgroundTasks, payload: RequestChangePas
 
 async def verify_otp(payload: VerifyOTP):
     if not (user := await User.find_one({"phonenumber": payload.phonenumber})):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_PHONENUMBER_NOT_FOUND,
             message_error=f"User phonenumber '{payload.phonenumber}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -129,14 +129,14 @@ async def verify_otp(payload: VerifyOTP):
             current_timestamp = datetime.now(timezone.utc).timestamp()
             time_elapsed = current_timestamp - otp_created_at
             if time_elapsed > timedelta(minutes=5).total_seconds():
-                raise CustomHTTException(
+                raise CustomHTTPException(
                     code_error=AuthErrorCode.AUTH_OTP_EXPIRED,
                     message_error="OTP has expired. Please request a new one.",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
 
         if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(int(payload.otp_code)):
-            raise CustomHTTException(
+            raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_OTP_NOT_VALID,
                 message_error=f"Code OTP '{int(payload.otp_code)}' invalid",
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -151,7 +151,7 @@ async def verify_otp(payload: VerifyOTP):
 
 async def resend_otp(bg: BackgroundTasks, payload: PhonenumberModel):
     if (user := await User.find_one({"phonenumber": payload.phonenumber})) is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error=f"User with phone number '{payload.phonenumber}' not found",
             status_code=status.HTTP_400_BAD_REQUEST,

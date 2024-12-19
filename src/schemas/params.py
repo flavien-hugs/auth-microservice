@@ -1,6 +1,6 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ParamsModel(BaseModel):
-    name: str
-    type: str
+    name: str = Field(..., description="Name of the parameter")
+    type: str = Field(..., description="Type of the parameter")

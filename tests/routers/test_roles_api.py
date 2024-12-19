@@ -2,6 +2,8 @@ import pytest
 from slugify import slugify
 from starlette import status
 
+from src.common.helpers.error_codes import AppErrorCode
+
 
 @pytest.mark.asyncio
 async def test_create_roles_unauthorized(http_client_api, fake_role_data):
@@ -152,10 +154,8 @@ async def test_update_user_bad_request(
 
     response = await http_client_api.put(f"/roles/{role_id}", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_422_UNPROCESSABLE_ENTITY, response.text
-    assert response.json() == {
-        "code_error": "validation/request-validation-error",
-        "message_error": "[{'field': 'body', 'message': 'Field required'}]",
-    }
+    assert response.json()["code_error"] == AppErrorCode.UNPROCESSABLE_ENTITY
+    assert response.json()["message_error"] == "[{'field': 'body', 'message': 'Field required'}]"
 
     mock_verify_access_token.assert_called_once()
     mock_verify_access_token.assert_called_once_with("valid_token")

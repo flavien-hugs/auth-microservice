@@ -25,7 +25,7 @@ class AuthBaseConfig(BaseSettings):
     LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         ..., alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
     )
-    USE_GRIDFS_STORAGE: Optional[bool] = Field(default=False, alias="USE_GRIDFS_STORAGE")
+    USE_TRACK_ACTIVITY_LOGS: Optional[bool] = Field(default=True, alias="USE_TRACK_ACTIVITY_LOGS")
     LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         default=False, alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
     )
@@ -43,7 +43,6 @@ class AuthBaseConfig(BaseSettings):
 
     # DATABASE CONFIG
     MONGO_DB: str = Field(..., alias="MONGO_DB")
-    MONGO_FS_BUCKET_NAME: str = Field(default="auth", alias="MONGO_FS_BUCKET_NAME")
     MONGODB_URI: str = Field(..., alias="MONGODB_URI")
 
     # REDIS CONFIG
@@ -51,7 +50,14 @@ class AuthBaseConfig(BaseSettings):
     EXPIRE_CACHE: Optional[PositiveInt] = Field(default=500, alias="EXPIRE_CACHE")
 
     # MIDDLEWARE CONFIG
-    COMPRESS_MIN_SIZE: Optional[PositiveInt] = Field(default=1_000, alias="COMPRESS_MIN_SIZE")
+    COMPRESS_MIN_SIZE: Optional[int] = Field(default=1000, alias="COMPRESS_MIN_SIZE")
+    RATE_LIMIT_REQUEST: Optional[int] = Field(default=5, alias="RATE_LIMIT_REQUEST")
+    RATE_LIMIT_INTERVAL: Optional[int] = Field(default=3600, alias="RATE_LIMIT_INTERVAL")
+
+    # VALIDATE TOKEN AND TRAILHUB CLIENT ENDPOINT
+    API_AUTH_URL_BASE: str = Field(..., alias="API_AUTH_URL_BASE")
+    API_TRAILHUB_ENDPOINT: str = Field(..., alias="API_TRAILHUB_ENDPOINT")
+    API_AUTH_CHECK_VALIDATE_ACCESS_TOKEN: str = Field(..., alias="API_AUTH_CHECK_VALIDATE_ACCESS_TOKEN")
 
 
 @lru_cache

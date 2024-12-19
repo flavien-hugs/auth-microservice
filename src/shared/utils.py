@@ -7,16 +7,10 @@ from typing import Any, Callable, Optional, TypeVar
 
 import pyotp
 from fastapi import Request, Response
-from fastapi_pagination import Page
-from fastapi_pagination.customization import CustomizedPage, UseName, UseOptionalParams
-from fastapi_pagination.utils import disable_installed_extensions_check
-from motor.motor_asyncio import AsyncIOMotorGridFSBucket
 from pwdlib import PasswordHash
 from pwdlib.hashers.argon2 import Argon2Hasher
 from pwdlib.hashers.bcrypt import BcryptHasher
 from slugify import slugify
-
-disable_installed_extensions_check()
 
 password_context = PasswordHash((Argon2Hasher(), BcryptHasher()))
 
@@ -78,10 +72,6 @@ def password_hash(password: str) -> str:
     return password_context.hash(password=password)
 
 
-def customize_page(model):
-    return CustomizedPage[Page[T], UseName("CustomPage"), UseOptionalParams()]
-
-
 class GenerateOPTKey:
 
     @classmethod
@@ -129,7 +119,3 @@ class TokenBlacklistHandler:
             raise IOError(f"Error verifying token in blacklist: {e}") from e
 
         return any(compare_digest(value, token) for value in tokens)
-
-
-async def get_fs(request: Request) -> AsyncIOMotorGridFSBucket:
-    return request.app.state.fs

@@ -1,18 +1,21 @@
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, Body, Depends, Query, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 from slugify import slugify
 
 from src.common.helpers.caching import delete_custom_key
+from src.common.helpers.pagination import customize_page
+from src.common.services.trailhub_client import send_event
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
-from src.shared.utils import customize_page, SortEnum
+from src.shared import API_TRAILHUB_ENDPOINT, API_VERIFY_ACCESS_TOKEN_ENDPOINT
+from src.shared.utils import SortEnum
 
 service_appname_slug = slugify(settings.APP_NAME)
 
@@ -38,8 +41,19 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
     summary="Create role",
     status_code=status.HTTP_201_CREATED,
 )
-async def create_role(payload: RoleModel = Body(...)):
-    return await roles.create_role(role=payload)
+async def create_role(request: Request, bg: BackgroundTasks, payload: RoleModel = Body(...)):
+    result = await roles.create_role(role=payload)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has created a new role with the name '{payload.name}'",
+            user_id=None,
+        )
+    return result
 
 
 @role_router.get(
@@ -91,8 +105,19 @@ async def ger_role(id: PydanticObjectId):
     summary="Update role",
     status_code=status.HTTP_200_OK,
 )
-async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
-    return await roles.update_role(role_id=PydanticObjectId(id), update_role=payload)
+async def update_role(request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: RoleModel = Body(...)):
+    result = await roles.update_role(role_id=PydanticObjectId(id), update_role=payload)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has created a new role with the name '{id}:{payload.name}'",
+            user_id=None,
+        )
+    return result
 
 
 @role_router.delete(
@@ -104,8 +129,19 @@ async def update_role(id: PydanticObjectId, payload: RoleModel = Body(...)):
     summary="Delete role",
     status_code=status.HTTP_204_NO_CONTENT,
 )
-async def delete_role(id: PydanticObjectId):
-    return await roles.delete_role(role_id=PydanticObjectId(id))
+async def delete_role(request: Request, bg: BackgroundTasks, id: PydanticObjectId):
+    result = await roles.delete_role(role_id=PydanticObjectId(id))
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has deleted the role with the name '{id}'",
+            user_id=None,
+        )
+    return result
 
 
 if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
@@ -144,7 +180,20 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     summary="Assign permissions to role",
     status_code=status.HTTP_200_OK,
 )
-async def manage_permission_to_role(id: PydanticObjectId, payload: Set[str] = Body(...)):
+async def manage_permission_to_role(
+    request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: Set[str] = Body(...)
+):
+    result = await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
     await delete_custom_key(service_appname_slug + "access")
     await delete_custom_key(service_appname_slug + "validate")
-    return await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
+    if settings.USE_TRACK_ACTIVITY_LOGS:
+        await send_event(
+            request=request,
+            bg=bg,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
+            source=settings.APP_NAME.lower(),
+            message=f" has assigned permissions to the role with the ID '{id}'",
+            user_id=None,
+        )
+    return result

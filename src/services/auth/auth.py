@@ -7,7 +7,7 @@ from fastapi.encoders import jsonable_encoder
 from starlette.responses import JSONResponse
 
 from src.common.helpers.caching import delete_custom_key
-from src.common.helpers.exceptions import CustomHTTException
+from src.common.helpers.exception import CustomHTTPException
 from src.config import settings
 from src.middleware import CustomAccessBearer
 from src.models import User
@@ -26,13 +26,13 @@ async def _find_user_by_identifier(identifier: str, is_email: bool) -> Optional[
 
 async def _validate_user_status(user: User) -> None:
     if user is None:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error="User does not exist.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
     if not user.is_active:
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
             message_error="Your account is not active. Please contact the administrator to activate your account.",
             status_code=status.HTTP_403_FORBIDDEN,
@@ -45,7 +45,7 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
 
     if not identifier:
         field = "email" if is_email else "phonenumber"
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_INVALID_CREDENTIALS,
             message_error=f"{field.capitalize()} is required for login.",
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -55,7 +55,7 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
     await _validate_user_status(user)
 
     if not verify_password(payload.password, user.password):
-        raise CustomHTTException(
+        raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_INVALID_PASSWORD,
             message_error="Your password is invalid.",
             status_code=status.HTTP_400_BAD_REQUEST,
