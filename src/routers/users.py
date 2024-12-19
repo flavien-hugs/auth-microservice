@@ -81,6 +81,13 @@ async def create_user(request: Request, bg: BackgroundTasks, payload: CreateUser
     summary="Get all users",
     status_code=status.HTTP_200_OK,
 )
+@user_router.get(
+    "/_read",
+    response_model=customize_page(UserOut),
+    response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
+    summary="Get all users (internal)",
+    status_code=status.HTTP_200_OK,
+)
 async def listing_users(
     query: Optional[str] = Query(None, description="Filter by user"),
     # is_primary: bool = Query(default=False, description="Filter grant super admin"),
