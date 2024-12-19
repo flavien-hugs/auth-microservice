@@ -7,10 +7,9 @@ packages = [{include = "src" }]
 
 [tool.poetry.dependencies]
 python = "3.12.3"
-beanie = "^1.26.0"
+beanie = "1.26.0"
 python-slugify = "^8.0.4"
 fastapi-jwt = "^0.3.0"
-python-jose = "^3.3.0"
 pyotp = "^2.9.0"
 httptools = "^0.6.1"
 uvloop = "^0.21.0"
@@ -22,6 +21,7 @@ pwdlib = {extras = ["argon2", "bcrypt"], version = "^0.2.1"}
 user-agents = "^2.2.0"
 python-multipart = "^0.0.12"
 cachetools = "^5.5.0"
+python-jose = "^3.3.0"
 
 
 [tool.poetry.group.test.dependencies]
