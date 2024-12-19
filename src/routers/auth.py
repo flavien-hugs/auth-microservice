@@ -96,8 +96,8 @@ async def login(request: Request, bg: BackgroundTasks, payload: LoginUser = Body
         await send_event(
             request=request,
             bg=bg,
-            oauth_url=settings.API_AUTH_VALIDATE_TOKEN_ENDPOINT,
-            trailhub_url=settings.API_TRAILHUB_ENDPOINT,
+            oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
+            trailhub_url=API_TRAILHUB_ENDPOINT,
             source=settings.APP_NAME.lower(),
             message=f"'{payload.phonenumber}' has logged in.",
             user_id=None,
