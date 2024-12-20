@@ -215,7 +215,7 @@ async def update_user(request: Request, bg: BackgroundTasks, id: PydanticObjectI
             oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
             trailhub_url=API_TRAILHUB_ENDPOINT,
             source=settings.APP_NAME.lower(),
-            message=f" has updated the user information '{id}:{payload.fullname}'",
+            message=f" has updated the user information '{id}'",
             user_id=str(id),
         )
     return result
