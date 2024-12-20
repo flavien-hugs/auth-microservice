@@ -56,7 +56,9 @@ class VerifyOTP(PhonenumberModel):
 class LoginUser(BaseModel, CheckEmailOrPhone):
     email: Optional[str] = Field(None, examples=["haf@exemple.com"], description="User email")
     phonenumber: Optional[str] = Field(None, examples=["+2250151571396"], description="User phone number")
-    password: str = Field(..., examples=["password"], description="User password")
+    password: str = Field(
+        ..., min_length=settings.PASSWORD_MIN_LENGTH, examples=["password"], description="User password"
+    )
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -91,7 +93,7 @@ class LoginUser(BaseModel, CheckEmailOrPhone):
         schema["properties"] = props
         return schema
 
-    @model_validator(mode="before")
+    # @model_validator(mode="before")
     @classmethod
     def validate_password(cls, values: dict):
         password = values.get("password")
