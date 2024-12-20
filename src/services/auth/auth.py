@@ -62,7 +62,11 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
         )
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
-    user_data = user.model_dump(by_alias=True, mode="json", exclude={"password", "attributes", "is_primary"})
+    user_data = user.model_dump(
+        by_alias=True,
+        mode="json",
+        exclude={"password", "attributes.otp_secret", "attributes.otp_created_at", "is_primary"},
+    )
     user_data.update(
         {"role": role.model_dump(by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"})}
     )

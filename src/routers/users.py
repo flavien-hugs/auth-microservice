@@ -215,7 +215,7 @@ async def update_user(request: Request, bg: BackgroundTasks, id: PydanticObjectI
             trailhub_url=API_TRAILHUB_ENDPOINT,
             source=settings.APP_NAME.lower(),
             message=f" has updated the user with the email '{id}:{payload.fullname}'",
-            user_id=str(str),
+            user_id=str(id),
         )
     return result
 
