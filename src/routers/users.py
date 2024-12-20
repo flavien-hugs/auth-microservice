@@ -87,6 +87,7 @@ async def create_user(request: Request, bg: BackgroundTasks, payload: CreateUser
     response_model_exclude={"password", "is_primary", "attributes.otp_secret", "attributes.otp_created_at"},
     summary="Get all users (internal)",
     status_code=status.HTTP_200_OK,
+    include_in_schema=False,
 )
 async def listing_users(
     query: Optional[str] = Query(None, description="Filter by user"),
@@ -214,7 +215,7 @@ async def update_user(request: Request, bg: BackgroundTasks, id: PydanticObjectI
             oauth_url=API_VERIFY_ACCESS_TOKEN_ENDPOINT,
             trailhub_url=API_TRAILHUB_ENDPOINT,
             source=settings.APP_NAME.lower(),
-            message=f" has updated the user with the email '{id}:{payload.fullname}'",
+            message=f" has updated the user information '{id}:{payload.fullname}'",
             user_id=str(id),
         )
     return result
