@@ -124,7 +124,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
         """
         update_data["attributes"] = {**user.attributes, **update_data["attributes"]}
 
-    updated_user_doc = await user.set({"updated_at": datetime.now(tz=UTC), **update_data})
+    updated_user_doc = await user.set({**update_data, "updated_at": datetime.now(tz=UTC)})
 
     role = await get_one_role(role_id=PydanticObjectId(updated_user_doc.role))
     return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
