@@ -18,10 +18,6 @@ services:
             - "./src/:/app/src"
         depends_on:
             - mongo
-        ports:
-            - "8018:${APP_DEFAULT_PORT}"
-        env_file:
-            - ./dotenv/app.env
         logging: *logging
 
     mongo:
@@ -33,8 +29,6 @@ services:
             MONGO_PASSWORD: "${MONGO_PASSWORD}"
             MONGO_INITDB_ROOT_USERNAME: "${MONGO_USER}"
             MONGO_INITDB_ROOT_PASSWORD: "${MONGO_PASSWORD}"
-        ports:
-            - "27039:${MONGO_PORT}"
         volumes:
             - auth_data:/data/db
         logging: *logging
@@ -45,8 +39,6 @@ services:
         command: redis-server --loglevel ${REDIS_LOG_LEVEL:-"warning"}
         volumes:
             - redis_data:/data
-        env_file:
-            - ./dotenv/redis.env
         logging: *logging
 
 volumes:
