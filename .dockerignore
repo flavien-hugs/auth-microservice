@@ -23,3 +23,6 @@ README.md
 docker-compose.yml
 **/venv
 **/env
+__pycache__
+docker-compose.local.yaml
+.dockerignore
