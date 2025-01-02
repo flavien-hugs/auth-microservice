@@ -169,6 +169,7 @@ async def check_access(
     "/check-validate-access-token",
     summary="Check validate access token",
     status_code=status.HTTP_200_OK,
+    include_in_schema=False,
 )
 @cache(expire=settings.EXPIRE_CACHE, key_builder=custom_key_builder(service_appname_slug + "validate"))
 async def check_validate_access_token(token: str):

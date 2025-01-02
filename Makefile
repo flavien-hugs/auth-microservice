@@ -1,40 +1,55 @@
+# Inclusion des fichiers d'environnement s'ils existent
 ifneq (,$(wildcard .env))
     include .env
     export
 endif
 
-.PHONY: help
-help:	## Show this help
-	@echo "Available targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+# Définition des fichiers Docker Compose
+COMPOSE_FILES := -f docker-compose.local.yaml
 
-.PHONY: startapp
-startapp: ## Run service
-	poetry run app
+# Objectif par défaut
+.DEFAULT_GOAL := help
 
-.PHONY: pre-commit
-pre-commit: ## Run pre-commit
-	pre-commit run --all-files
+# Couleurs pour l'affichage de l'aide
+COLOR_TARGET := \033[36m
+COLOR_DESC := \033[0m
 
-.PHONY: run
-run: ## Docker run
-	docker compose up
+# Cibles phony
+.PHONY: help run restart stop logs down prune volume pre-commit
 
-.PHONY: logs
-logs:	## View logs from one/all containers
-	docker compose logs -f $(s)
+# Affiche l'aide avec les descriptions des cibles
+help: ## Afficher cette aide
+	@echo "Cibles disponibles :"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(COLOR_TARGET)%-30s$(COLOR_DESC)%s\n", $$1, $$2}'
 
-.PHONY: down
-down:	## Stop the services, remove containers and networks
-	docker compose down
 
-.PHONY: prune
-prune:	## Remove images, containers, networks and unused
-	docker system prune
+# Exécute les conteneurs
+run: ## Démarrer les conteneurs
+	docker compose --env-file=dotenv/app.env $(COMPOSE_FILES) up
 
-.PHONY: volume
-volume:	## Remove volumes unused
-	docker volume prune
+# Redémarre un ou plusieurs conteneurs
+restart: ## Redémarrer un ou plusieurs conteneurs (utiliser SERVICE=<service>)
+	docker compose $(COMPOSE_FILES) restart $(SERVICE)
+
+# Arrête un ou tous les conteneurs
+stop: ## Arrêter un ou tous les conteneurs (utiliser SERVICE=<service>)
+	docker compose $(COMPOSE_FILES) stop $(SERVICE)
+
+# Affiche les logs des conteneurs
+logs: ## Voir les logs des conteneurs (utiliser SERVICE=<service>)
+	docker compose $(COMPOSE_FILES) logs -f $(SERVICE)
+
+# Supprime les conteneurs, réseaux, etc.
+down: ## Arrêter les services et supprimer les conteneurs, réseaux, volumes
+	docker compose $(COMPOSE_FILES) down
+
+# Nettoie les ressources Docker non utilisées
+prune: ## Nettoyer les images, conteneurs et réseaux non utilisés
+	docker system prune -f
+
+# Nettoie les volumes Docker non utilisés
+volume: ## Nettoyer les volumes Docker non utilisés
+	docker volume prune -f
 
 .PHONY: tests
 tests: ## Execute test
@@ -43,3 +58,7 @@ tests: ## Execute test
 .PHONY: coverage
 coverage: ## Execute coverage
 	poetry run coverage report -m
+
+# Exécute les hooks de pré-commit
+pre-commit: ## Exécuter les hooks de pré-commit
+	pre-commit run --all-files
