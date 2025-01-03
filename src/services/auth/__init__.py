@@ -15,6 +15,7 @@ from .email import (  # noqa: F401
 from .phonenumber import (  # noqa: F401
     request_password_reset_with_phonenumber,
     resend_otp,
+    find_user_by_phonenumber,
     reset_password_completed_with_phonenumber,
     signup_with_phonenumber,
     verify_otp,

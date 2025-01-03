@@ -286,6 +286,13 @@ if bool(enable_endpoint.SHOW_CHECK_USER_ATTRIBUTE_ENDPOINT):
         return await auth.check_user_attribute(key=key, value=value, in_attributes=in_attributes)
 
 
+if bool(enable_endpoint.SHOW_FIND_USER_BY_PHONENUMBER_ENDPOINT):
+
+    @auth_router.get("/find-phonenumber", summary="Find user by phonenumber", status_code=status.HTTP_200_OK)
+    async def find_phonenumber(phonenumber: str):
+        return await auth.find_user_by_phonenumber(phonenumber=phonenumber)
+
+
 auth_router.tags = ["SEND MESSAGE"]
 auth_router.prefix = "/send"
 
