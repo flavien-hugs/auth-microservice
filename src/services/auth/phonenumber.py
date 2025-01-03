@@ -20,6 +20,16 @@ from src.shared.utils import password_hash
 from src.services import roles
 
 
+async def find_user_by_phonenumber(phonenumber: str):
+    if (user := await User.find_one({"phonenumber": phonenumber})) is None:
+        raise CustomHTTPException(
+            code_error=UserErrorCode.USER_NOT_FOUND,
+            message_error=f"User with phone number {phonenumber!r} not found",
+            status_code=status.HTTP_404_NOT_FOUND,
+        )
+    return user
+
+
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
 
     if payload.phonenumber and compare_digest(payload.phonenumber, " "):
