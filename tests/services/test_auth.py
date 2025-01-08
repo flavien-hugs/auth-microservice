@@ -1,6 +1,6 @@
 import json
 from unittest import mock
-from datetime import datetime
+from datetime import datetime, UTC
 
 import pytest
 from starlette import status
@@ -98,6 +98,43 @@ async def test_login_success(
         # user data assertions
         assert response_data["user"][identifier] == payload.email if register_with_email else payload.phonenumber
         assert response_data["user"]["role"]["name"] == "admin"
+
+
+@pytest.mark.asyncio
+async def test_login_device_already_logged_in(
+        mock_request,
+        fixture_models,
+):
+    settings.REGISTER_WITH_EMAIL = True
+
+    # Setup user with existing device_id
+    fake_user = fixture_models.users.User(
+        id="66e85363aa07cb1e95d3e3d0",
+        email="test@example.com",
+        password="hashedpassword",
+        role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
+        is_active=True,
+        attributes={
+            "device_id": "existing_device_id",
+            "address_ip": "192.168.1.2",
+            "last_login": datetime.now(tz=UTC)
+        }
+    )
+
+    mock_role = {"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"}
+
+    with mock.patch("src.services.auth.auth.get_mac_address", return_value="different_device_id"), \
+            mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock, return_value=fake_user), \
+            mock.patch("src.services.auth.auth.verify_password", return_value=True), \
+            mock.patch("src.services.auth.auth.get_one_role",
+                       new_callable=mock.AsyncMock, return_value=mock.Mock(mock_role)):
+        payload = LoginUser(email="test@example.com", password="testpassword")
+
+        with pytest.raises(CustomHTTPException) as exc_info:
+            await auth.login(request=mock_request, payload=payload)
+
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+        assert exc_info.value.code_error == AuthErrorCode.AUTH_ALREADY_LOGGED_IN
 
 
 @pytest.mark.asyncio
