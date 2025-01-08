@@ -14,6 +14,7 @@ class AuthErrorCode(StrEnum):
     AUTH_INSUFFICIENT_PERMISSION = "auth/insufficient-permission"
     AUTH_OTP_NOT_VALID = "auth/otp-not-valid"
     AUTH_OTP_EXPIRED = "auth/otp-code-expired"
+    AUTH_ALREADY_LOGGED_IN = "auth/already-logged-in-another-device"
 
 
 class UserErrorCode(StrEnum):
