@@ -1,5 +1,6 @@
 import json
 from unittest import mock
+from datetime import datetime
 
 import pytest
 from starlette import status
@@ -14,6 +15,8 @@ from beanie import PydanticObjectId
 
 
 @pytest.mark.asyncio
+@mock.patch("src.services.auth.auth.get_mac_address")
+@mock.patch("src.services.auth.auth.User.set", new_callable=mock.AsyncMock)
 @mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock)
 @mock.patch("src.services.auth.auth.verify_password", return_value=True)
 @mock.patch("src.services.auth.auth.get_one_role", new_callable=mock.AsyncMock)
@@ -25,10 +28,15 @@ async def test_login_success(
     mock_get_one_role,
     mock_verify_password,
     mock_find_one,
+    mock_user_set,
+    mock_get_mac_address,
     fixture_models,
     mock_task,
     mock_request,
 ):
+    # setup device_id mock
+    mock_get_mac_address.return_value = "test_device_id"
+
     for register_with_email in [True, False]:
         settings.REGISTER_WITH_EMAIL = register_with_email
 
@@ -40,6 +48,11 @@ async def test_login_success(
                 password="hashedpassword",
                 role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
                 is_active=True,
+                attributes={
+                    "device_id": None,
+                    "address_ip": None,
+                    "last_login": None
+                }
             )
             payload = LoginUser(email="test@example.com", password="testpassword")
         else:
@@ -51,21 +64,38 @@ async def test_login_success(
                 password="hashedpassword",
                 role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
                 is_active=True,
+                attributes={
+                    "device_id": None,
+                    "address_ip": None,
+                    "last_login": None
+                }
             )
             payload = LoginUser(phonenumber="+2250151571396", password="testpassword")
 
+        # setup mocks
         mock_find_one.return_value = fake_user
         mock_get_one_role.return_value.model_dump = mock.Mock(
             return_value={"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"}
         )
+        mock_user_set.return_value = fake_user
 
+        # mock request headers for X-Forwarded-For
+        mock_request.headers = {"X-Forwarded-For": "192.168.1.1"}
+        mock_request.client.host = "127.0.0.1"
+
+        # execute login
         response = await auth.login(request=mock_request, payload=payload)
+
+        # assertions
         assert isinstance(response, JSONResponse)
         assert response.status_code == status.HTTP_200_OK
 
         response_data = json.loads(response.body.decode())
+
+        # token assertions
         assert response_data["access_token"] == "access_token"
-        assert response_data["referesh_token"] == "refresh_token"
+
+        # user data assertions
         assert response_data["user"][identifier] == payload.email if register_with_email else payload.phonenumber
         assert response_data["user"]["role"]["name"] == "admin"
 

@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from typing import Optional
 
 from beanie import PydanticObjectId
 from fastapi import Request, status
 from fastapi.encoders import jsonable_encoder
+from getmac import get_mac_address
 from starlette.responses import JSONResponse
 
 from src.common.helpers.caching import delete_custom_key
@@ -62,15 +63,47 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
         )
 
     role = await get_one_role(role_id=PydanticObjectId(user.role))
+
+    # Récupérer l'adresse IP et le device_id
+    address_ip = request.client.host
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        address_ip = forwarded_for.split(",")[0]
+
+    device_id = (
+        get_mac_address(ip=address_ip)
+        or get_mac_address(interface="eth0")
+        or get_mac_address(ip=address_ip, network_request=True)
+    )
+
+    # Vérifier l'authentification unique par appareil
+    if user.attributes["device_id"] and user.attributes["device_id"] != device_id:
+        raise CustomHTTPException(
+            code_error=AuthErrorCode.AUTH_ALREADY_LOGGED_IN,
+            message_error="You are already logged in on another device.",
+            status_code=status.HTTP_403_FORBIDDEN,
+        )
+
+    # Mettre à jour les informations de l'utilisateur
+    current_time = datetime.now(tz=UTC)
+    update_data = {"last_login": current_time, "address_ip": address_ip, "device_id": device_id}
+    await user.set({"attributes": {**user.attributes, **update_data}, "updated_at": current_time})
+
     user_data = user.model_dump(
         by_alias=True,
         mode="json",
-        exclude={"password", "attributes.otp_secret", "attributes.otp_created_at", "is_primary"},
+        exclude={
+            "password",
+            "attributes.otp_secret",
+            "attributes.otp_created_at",
+            "is_primary",
+        },
     )
     user_data.update(
         {"role": role.model_dump(by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"})}
     )
 
+    # Générer les tokens
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
@@ -82,8 +115,14 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
 
 async def logout(request: Request) -> JSONResponse:
     authorization = request.headers.get("Authorization")
-    token = authorization.split()[1]
-    await blacklist_token.add_blacklist_token(token)
+    token = authorization.split()[1] if authorization else None
+
+    decode_token = CustomAccessBearer.decode_access_token(token=token)
+    user_id = decode_token.get("subject", {}).get("_id")
+    user = await get_one_user(user_id=PydanticObjectId(user_id))
+    await user.set({"attributes": {**user.attributes, "device_id": None}})
+
+    await blacklist_token.add_blacklist_token(token=token)
 
     await delete_custom_key(settings.APP_NAME + "access")
     await delete_custom_key(settings.APP_NAME + "validate")
