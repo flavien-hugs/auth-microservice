@@ -22,6 +22,7 @@ user-agents = "^2.2.0"
 python-multipart = "^0.0.12"
 cachetools = "^5.5.0"
 python-jose = "^3.3.0"
+getmac = "0.9.5"
 
 
 [tool.poetry.group.test.dependencies]
