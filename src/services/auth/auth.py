@@ -77,7 +77,12 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
     )
 
     # Vérifier l'authentification unique par appareil
-    if user.attributes["device_id"] and user.attributes["device_id"] != device_id:
+    if (
+        hasattr(user, "attributes")
+        and user.attributes
+        and user.attributes.get("device_id")
+        and user.attributes.get("device_id") != device_id
+    ):
         raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_ALREADY_LOGGED_IN,
             message_error="You are already logged in on another device.",
@@ -87,7 +92,8 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
     # Mettre à jour les informations de l'utilisateur
     current_time = datetime.now(tz=UTC)
     update_data = {"last_login": current_time, "address_ip": address_ip, "device_id": device_id}
-    await user.set({"attributes": {**user.attributes, **update_data}, "updated_at": current_time})
+    existing_attributes = user.attributes if hasattr(user, "attributes") and user.attributes else {}
+    await user.set({"attributes": {**existing_attributes, **update_data}, "updated_at": current_time})
 
     user_data = user.model_dump(
         by_alias=True,
