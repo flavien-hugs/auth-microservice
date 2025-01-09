@@ -21,13 +21,23 @@ from src.services import roles
 
 
 async def find_user_by_phonenumber(phonenumber: str):
-    if (user := await User.find_one({"phonenumber": phonenumber})) is None:
+    phone = f"+{phonenumber}" if not phonenumber.startswith("+") else phonenumber
+
+    if (user := await User.find_one({"phonenumber": phone})) is None:
         raise CustomHTTPException(
             code_error=UserErrorCode.USER_NOT_FOUND,
-            message_error=f"User with phone number {phonenumber!r} not found",
+            message_error=f"User with phone number {phone!r} not found",
             status_code=status.HTTP_404_NOT_FOUND,
         )
-    return user
+
+    user_dict = jsonable_encoder(
+        {
+            "fullname": user.fullname,
+            "phonenumber": user.phonenumber,
+            "avatar": user.attributes.get("avatar") if user.attributes.get("avatar") else None,
+        }
+    )
+    return user_dict
 
 
 async def request_password_reset_with_phonenumber(bg: BackgroundTasks, payload: PhonenumberModel):
