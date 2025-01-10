@@ -30,6 +30,14 @@ async def find_user_by_phonenumber(phonenumber: str):
             status_code=status.HTTP_404_NOT_FOUND,
         )
 
+    if not user.is_active:
+        raise CustomHTTPException(
+            code_error=UserErrorCode.USER_ACCOUND_DESABLE,
+            message_error=f"User account with phone number {phone!r} is disabled."
+            f" Please request to activate the account.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     user_dict = jsonable_encoder(
         {
             "fullname": user.fullname,
