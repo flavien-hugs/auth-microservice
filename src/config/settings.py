@@ -22,9 +22,6 @@ class AuthBaseConfig(BaseSettings):
     REGISTER_USER_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         ..., alias="REGISTER_USER_ENDPOINT_SECURITY_ENABLED"
     )
-    LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
-        ..., alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
-    )
     USE_TRACK_ACTIVITY_LOGS: Optional[bool] = Field(default=True, alias="USE_TRACK_ACTIVITY_LOGS")
     LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED: Optional[bool] = Field(
         default=False, alias="LIST_PARAMETERS_ENDPOINT_SECURITY_ENABLED"
