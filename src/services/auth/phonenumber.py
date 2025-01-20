@@ -80,8 +80,8 @@ async def reset_password_completed_with_phonenumber(payload: ChangePasswordWithO
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    otp_code_value = int(payload.code_otp)
-    if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(otp_code_value):
+    otp_code_value = str(payload.code_otp)
+    if not otp_service.generate_otp_instance(user.attributes["otp_secret"]).verify(otp=otp_code_value):
         raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_OTP_NOT_VALID,
             message_error=f"Code OTP '{otp_code_value}' invalid",
