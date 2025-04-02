@@ -1,4 +1,4 @@
-FROM python:3.12.3-slim-bookworm as python-base
+FROM python:3.12.3-slim-bookworm AS python-base
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=on \
@@ -26,7 +26,7 @@ RUN python -m venv $VIRTUAL_ENV
 WORKDIR /app
 ENV PYTHONPATH="/app:$PYTHONPATH"
 
-FROM python-base as builder-base
+FROM python-base AS builder-base
 
 RUN apt-get update && \
     apt-get install -y \
@@ -52,7 +52,7 @@ RUN --mount=type=cache,target=/root/.cache \
 
 
 # The runtime image, used to just run the code provided its virtual environment
-FROM python-base as runtime
+FROM python-base AS runtime
 
 ARG UID=10001
 ARG GID=10001

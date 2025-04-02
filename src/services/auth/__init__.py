@@ -5,6 +5,7 @@ from .auth import (  # noqa: F401
     login,
     logout,
     validate_access_token,
+    refresh_token,
 )
 from .email import (  # noqa: F401
     completed_register_with_email,

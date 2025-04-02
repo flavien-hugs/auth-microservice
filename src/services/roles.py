@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from datetime import datetime, UTC
@@ -30,9 +31,7 @@ async def get_formatted_permissions() -> List[Dict]:
 
     for permission in all_permissions:
         service_info = {"name": permission["app"], "title": permission["title"]}
-        service_permissions = [
-            {"code": perm["code"], "description": perm["desc"]} for perm in permission["permissions"]
-        ]
+        service_permissions = [{"code": perm["code"], "description": perm["desc"]} for perm in permission["permissions"]]
 
         if service_permissions:
             formatted_permissions.append({"service_info": service_info, "permissions": service_permissions})
@@ -133,8 +132,10 @@ async def assign_permissions_to_role(role_id: PydanticObjectId, permission_codes
     if not new_permissions:
         return await role.update({"$set": {"permissions": old_permissions}})
 
-    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "check-permissions")
-    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "access")
+    await asyncio.gather(
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "check-permissions"),
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "access"),
+    )
 
     return await role.update({"$addToSet": {"permissions": {"$each": new_permissions}}})
 

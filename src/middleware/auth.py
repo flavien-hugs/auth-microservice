@@ -80,9 +80,9 @@ class CustomAccessBearer:
         return result
 
     @classmethod
-    async def verify_access_token(cls, token: str) -> bool:
+    async def verify_validity_token(cls, token: str) -> bool:
         """
-        Verifies the validity of an access token by checking the cache and token properties.
+        Verifies the validity of an token by checking the cache and token properties.
 
         :param token: The access token to verify.
         :type token: str
@@ -179,7 +179,7 @@ class AuthorizedHTTPBearer(HTTPBearer):
                     message_error="Missing or invalid authentication scheme.",
                     status_code=status.HTTP_401_UNAUTHORIZED,
                 )
-            await CustomAccessBearer.verify_access_token(auth.credentials)
+            await CustomAccessBearer.verify_validity_token(auth.credentials)
             return auth.credentials
 
         raise CustomHTTPException(
@@ -252,9 +252,7 @@ class CheckUserAccessHandler:
         user_subject = user_info.get("subject", {})
         user_role_info = user_subject.get("role", {})
 
-        if user_role_info.get("slug", "") == slugify(settings.DEFAULT_ADMIN_ROLE) or user_subject.get("_id") == str(
-            value
-        ):
+        if user_role_info.get("slug", "") == slugify(settings.DEFAULT_ADMIN_ROLE) or user_subject.get("_id") == str(value):
             return value
         else:
             raise CustomHTTPException(

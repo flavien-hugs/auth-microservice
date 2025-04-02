@@ -24,9 +24,7 @@ async def test_create_users_unauthorized(http_client_api, fake_user_data):
 
 @pytest.mark.asyncio
 async def test_create_users_forbidden(http_client_api, mock_check_permissions_handler, fake_user_data):
-    response = await http_client_api.post(
-        "/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.post("/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED, response.text
     assert response.json() == {"code_error": "auth/invalid-access-token", "message_error": "Not enough segments"}
@@ -48,9 +46,7 @@ async def test_create_users_no_authenticated(
 
 @pytest.mark.asyncio
 async def test_add_users_failed(http_client_api, fake_user_data):
-    response = await http_client_api.post(
-        "/users/add", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.post("/users/add", json=fake_user_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response.json() == {
@@ -65,9 +61,7 @@ async def test_create_users_already_exists(
 ):
 
     fake_user_data.update({"email": fake_user_collection.email})
-    response = await http_client_api.post(
-        "/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.post("/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert fake_user_data["email"] == fake_user_collection.email
@@ -82,12 +76,8 @@ async def test_create_users_already_exists(
 
 
 @pytest.mark.asyncio
-async def test_create_users_success(
-    http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_user_data
-):
-    response = await http_client_api.post(
-        "/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"}
-    )
+async def test_create_users_success(http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_user_data):
+    response = await http_client_api.post("/users", json=fake_user_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert fake_user_data["email"] == response.json()["email"]
@@ -152,9 +142,7 @@ async def test_read_user_not_found(
     mock_verify_access_token,
     mock_check_permissions_handler,
 ):
-    response = await http_client_api.get(
-        "/users/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.get("/users/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response.json() == {
         "code_error": "users/user-not-found",
@@ -264,9 +252,7 @@ async def test_delete_user_not_found(
     mock_check_permissions_handler,
     mock_check_check_user_access_handler,
 ):
-    response = await http_client_api.delete(
-        "/users/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.delete("/users/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response.json() == {
         "code_error": UserErrorCode.USER_NOT_FOUND,

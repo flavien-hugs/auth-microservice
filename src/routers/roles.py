@@ -1,3 +1,4 @@
+import asyncio
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
@@ -180,12 +181,14 @@ if bool(enable_endpoint.SHOW_MEMBERS_IN_ROLE_ENDPOINT):
     summary="Assign permissions to role",
     status_code=status.HTTP_200_OK,
 )
-async def manage_permission_to_role(
-    request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: Set[str] = Body(...)
-):
+async def manage_permission_to_role(request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: Set[str] = Body(...)):
     result = await roles.assign_permissions_to_role(role_id=PydanticObjectId(id), permission_codes=payload)
-    await delete_custom_key(service_appname_slug + "access")
-    await delete_custom_key(service_appname_slug + "validate")
+
+    await asyncio.gather(
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "access"),
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "validate"),
+    )
+
     if settings.USE_TRACK_ACTIVITY_LOGS:
         await send_event(
             request=request,
