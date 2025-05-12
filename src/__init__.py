@@ -25,6 +25,8 @@ from src.routers import auth_router, param_router, perm_router, role_router, use
 from src.services import roles, users
 from src.shared import blacklist_token
 
+__version__ = "0.1.0"
+
 BASE_URL = slugify(settings.APP_NAME)
 
 
@@ -54,6 +56,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[State]:
 
 app: FastAPI = FastAPI(
     lifespan=lifespan,
+    version=__version__,
     title=f"{settings.APP_TITLE} API Service",
     docs_url="/auth/docs",
     openapi_url="/auth/openapi.json",
