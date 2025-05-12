@@ -2,8 +2,6 @@ import pytest
 from slugify import slugify
 from starlette import status
 
-from src.common.helpers.error_codes import AppErrorCode
-
 
 @pytest.mark.asyncio
 async def test_create_roles_unauthorized(http_client_api, fake_role_data):

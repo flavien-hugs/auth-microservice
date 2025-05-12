@@ -2,12 +2,14 @@ import asyncio
 from typing import Optional, Set
 
 from beanie import PydanticObjectId
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, status
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Query, Request, status
 from fastapi_pagination.ext.beanie import paginate
 from pymongo import ASCENDING, DESCENDING
 from slugify import slugify
 
 from src.common.helpers.caching import delete_custom_key
+from src.common.helpers.error_codes import AppErrorCode
+from src.common.helpers.exception import CustomHTTPException
 from src.common.helpers.pagination import customize_page
 from src.common.services.trailhub_client import send_event
 from src.config import enable_endpoint, settings
@@ -15,8 +17,7 @@ from src.middleware import AuthorizedHTTPBearer, CheckPermissionsHandler
 from src.models import Role
 from src.schemas import RoleModel
 from src.services import roles
-from src.shared import API_TRAILHUB_ENDPOINT, API_VERIFY_ACCESS_TOKEN_ENDPOINT
-from src.shared.utils import SortEnum
+from src.shared import API_TRAILHUB_ENDPOINT, API_VERIFY_ACCESS_TOKEN_ENDPOINT, SortEnum
 
 service_appname_slug = slugify(settings.APP_NAME)
 
@@ -43,7 +44,21 @@ role_router = APIRouter(prefix="/roles", tags=["ROLES"], redirect_slashes=False)
     status_code=status.HTTP_201_CREATED,
 )
 async def create_role(request: Request, bg: BackgroundTasks, payload: RoleModel = Body(...)):
-    result = await roles.create_role(role=payload)
+    try:
+        result = await roles.create_role(role=payload)
+    except HTTPException as exc:
+        raise CustomHTTPException(
+            code_error=AppErrorCode.REQUEST_VALIDATION_ERROR,
+            message_error=str(exc),
+            status_code=status.HTTP_400_BAD_REQUEST,
+        ) from exc
+    except Exception as exc:
+        raise CustomHTTPException(
+            code_error=AppErrorCode.HTTP_ERROR,
+            message_error=str(exc),
+            status_code=status.HTTP_400_BAD_REQUEST,
+        ) from exc
+
     if settings.USE_TRACK_ACTIVITY_LOGS:
         await send_event(
             request=request,

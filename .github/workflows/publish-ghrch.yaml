@@ -107,8 +107,8 @@ jobs:
         permissions:
             actions: write
             contents: write
-        output:
-            version: ${{ steps.bump-version.outputs.version }}
+        outputs:
+            new_version: ${{ steps.extract-version.outputs.version }}
         steps:
             - name: Checkout repository
               uses: actions/checkout@v4
@@ -120,6 +120,14 @@ jobs:
               uses: python-semantic-release/python-semantic-release@master
               with:
                   github_token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+                  
+            - name: Extract new verion
+              id: extract-version
+              run: |
+                echo "Get the latest tag created by semantic-release ..."
+                VERSION=$(git describe --tags --abbrev=0)
+                echo "Extracted version: $VERSION"
+                echo "version=$VERSION" >> $GITHUB_OUTPUT
     
     staging:
         needs: [bump-version, tests]
@@ -143,8 +151,17 @@ jobs:
             - name: Determine image tag and build
               id: build
               run: |
-                echo "Get semantic-release version ..."
+                echo "Get version from bump-version job ..."
                 VERSION="${{ needs.bump-version.outputs.new_version }}"
+                
+                echo "Clean ‘v’ prefix if present"
+                CLEAN_VERSION=${VERSION#v}
+                echo "Using version: $CLEAN_VERSION"
+                
+                if [[ -z "$VERSION" ]]; then
+                  echo "Error: No version detected from semantic-release"
+                  exit 1
+                fi
 
                 BRANCH_NAME=""
                 if [[ "${{ github.event_name }}" == "push" ]]; then
@@ -157,15 +174,14 @@ jobs:
                 fi
 
                 echo "Branch name: $BRANCH_NAME"
-                echo "Semantic version: $VERSION"
                 
                 # Builds tags according to branch and version
                 if [[ "$BRANCH_NAME" == "main" || "$BRANCH_NAME" == "master" ]]; then
-                  DOCKER_TAGS=("latest" "$VERSION")
+                  DOCKER_TAGS=("latest" "$CLEAN_VERSION")
                 elif [[ "$BRANCH_NAME" == "preprod" ]]; then
-                  DOCKER_TAGS=("preprod" "v${VERSION}-preprod")
+                  DOCKER_TAGS=("preprod" "${CLEAN_VERSION}-preprod")
                 elif [[ "$BRANCH_NAME" == "develop" ]]; then
-                  DOCKER_TAGS=("dev" "v${VERSION}-dev")
+                  DOCKER_TAGS=("dev" "${CLEAN_VERSION}-dev")
                 else
                   echo "No valid tag found for branch $BRANCH_NAME, exiting..."
                   exit 1
@@ -173,9 +189,11 @@ jobs:
                 
                 # Build and push with all tags
                 echo "Building Docker image with tags: ${DOCKER_TAGS[@]}"
+                docker build -t ${{ secrets.GHRC_REGISTRY_ADDR }}:${DOCKER_TAGS[0]} .
                 
-                # Add tags
+                # Add additional tags
                 for tag in "${DOCKER_TAGS[@]:1}"; do
+                  echo "Adding additional tag: $tag"
                   docker tag ${{ secrets.GHRC_REGISTRY_ADDR }}:${DOCKER_TAGS[0]} ${{ secrets.GHRC_REGISTRY_ADDR }}:$tag
                 done
             
@@ -184,4 +202,4 @@ jobs:
                   docker push ${{ secrets.GHRC_REGISTRY_ADDR }}:$tag
                 done
                 
-                echo "Build and push Docker image ok ..."
+                echo "Build and push completed successfully"

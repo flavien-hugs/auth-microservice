@@ -119,3 +119,7 @@ class TokenBlacklistHandler:
             raise IOError(f"Error verifying token in blacklist: {e}") from e
 
         return any(compare_digest(value, token) for value in tokens)
+
+
+blacklist_token = TokenBlacklistHandler()
+otp_service = GenerateOPTKey()
