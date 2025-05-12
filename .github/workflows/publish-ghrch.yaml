@@ -101,6 +101,23 @@ jobs:
                 name: coverage
                 path: coverage.xml
 
+    bump-version:
+        needs: [tests]
+        runs-on: ubuntu-latest
+        permissions:
+            actions: write
+            contents: write
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
+
+            - name: Bump version using semantic-release
+              uses: python-semantic-release/python-semantic-release@master
+              with:
+                  github_token: ${{ secrets.GH_SUBMODULE_TOKEN }}
+    
     staging:
         needs: [tests]
         runs-on: ubuntu-latest
