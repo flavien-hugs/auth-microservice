@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timezone, UTC
 from typing import Optional
 
@@ -86,7 +87,7 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
         raise CustomHTTPException(
             code_error=AuthErrorCode.AUTH_ALREADY_LOGGED_IN,
             message_error="You are already logged in on another device.",
-            status_code=status.HTTP_403_FORBIDDEN,
+            status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
     # Mettre à jour les informations de l'utilisateur
@@ -105,14 +106,12 @@ async def login(request: Request, payload: LoginUser) -> JSONResponse:
             "is_primary",
         },
     )
-    user_data.update(
-        {"role": role.model_dump(by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"})}
-    )
+    user_data.update({"role": role.model_dump(by_alias=True, mode="json", exclude={"permissions", "created_at", "updated_at"})})
 
     # Générer les tokens
     response_data = {
         "access_token": CustomAccessBearer.access_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
-        "referesh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
+        "refresh_token": CustomAccessBearer.refresh_token(data=jsonable_encoder(user_data), user_id=str(user.id)),
         "user": user_data,
     }
 
@@ -123,6 +122,9 @@ async def logout(request: Request) -> JSONResponse:
     authorization = request.headers.get("Authorization")
     token = authorization.split()[1] if authorization else None
 
+    if not token:
+        return JSONResponse(content={"message": "BAD REQUEST"}, status_code=status.HTTP_400_BAD_REQUEST)
+
     decode_token = CustomAccessBearer.decode_access_token(token=token)
     user_id = decode_token.get("subject", {}).get("_id")
     user = await get_one_user(user_id=PydanticObjectId(user_id))
@@ -130,10 +132,41 @@ async def logout(request: Request) -> JSONResponse:
 
     await blacklist_token.add_blacklist_token(token=token)
 
-    await delete_custom_key(settings.APP_NAME + "access")
-    await delete_custom_key(settings.APP_NAME + "validate")
+    await asyncio.gather(delete_custom_key(settings.APP_NAME + "access"), delete_custom_key(settings.APP_NAME + "validate"))
 
     return JSONResponse(content={"message": "Logout successfully !"}, status_code=status.HTTP_200_OK)
+
+
+async def refresh_token(refresh_token: str) -> JSONResponse:
+    if not refresh_token:
+        raise CustomHTTPException(
+            code_error=AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+            message_error="Refresh token is required.",
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    await CustomAccessBearer.verify_validity_token(token=refresh_token)
+
+    decoded_token = CustomAccessBearer.decode_access_token(token=refresh_token)
+
+    if not (user_data := decoded_token.get("subject")) or not (user_id := user_data.get("_id")):
+        raise CustomHTTPException(
+            code_error=AuthErrorCode.AUTH_INVALID_CREDENTIALS,
+            message_error="Invalid token payload",
+            status_code=status.HTTP_401_UNAUTHORIZED,
+        )
+
+    await get_one_user(user_id=PydanticObjectId(user_id))
+
+    await asyncio.gather(delete_custom_key(settings.APP_NAME + "access"), delete_custom_key(settings.APP_NAME + "validate"))
+
+    token_data = jsonable_encoder(user_data)
+    response_data = {
+        "access_token": CustomAccessBearer.access_token(data=token_data, user_id=user_id),
+        "refresh_token": CustomAccessBearer.refresh_token(data=token_data, user_id=user_id),
+    }
+
+    return JSONResponse(content=jsonable_encoder(response_data), status_code=status.HTTP_200_OK)
 
 
 async def change_password(user_id: PydanticObjectId, payload: ChangePassword) -> JSONResponse:

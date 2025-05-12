@@ -43,7 +43,7 @@ class TestCustomAccessBearer:
             "subject": {"is_active": True},
             "exp": datetime.now(timezone.utc).timestamp() + 600,
         }
-        result = await self.custom_access_token.verify_access_token("fake_access_token")
+        result = await self.custom_access_token.verify_validity_token("fake_access_token")
         assert result is True
 
     @pytest.mark.asyncio
@@ -54,7 +54,7 @@ class TestCustomAccessBearer:
             "exp": datetime.now(timezone.utc).timestamp() - 600,
         }
         with pytest.raises(CustomHTTPException) as exc_info:
-            await self.custom_access_token.verify_access_token("fake_access_token")
+            await self.custom_access_token.verify_validity_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_EXPIRED_ACCESS_TOKEN
 
@@ -67,7 +67,7 @@ class TestCustomAccessBearer:
         mock_blacklist.is_token_blacklisted = mock.AsyncMock(return_value=False)
         mock_decode_access_token.return_value = {"subject": {"is_active": True}, "exp": current_timestamp + 600}
 
-        result = await CustomAccessBearer.verify_access_token("valid_token")
+        result = await CustomAccessBearer.verify_validity_token("valid_token")
 
         # Vérification des appels
         mock_blacklist.is_token_blacklisted.assert_awaited_once_with("valid_token")
@@ -83,7 +83,7 @@ class TestCustomAccessBearer:
         mock_decode_access_token.return_value = {"subject": {"is_active": True}, "exp": current_timestamp - 100}
 
         with pytest.raises(CustomHTTPException) as exc:
-            await CustomAccessBearer.verify_access_token("expired_token")
+            await CustomAccessBearer.verify_validity_token("expired_token")
 
         # Vérification des appels
         mock_blacklist.is_token_blacklisted.assert_awaited_once_with("expired_token")
@@ -99,7 +99,7 @@ class TestCustomAccessBearer:
         mock_decode_access_token.side_effect = JWTError("Invalid token")
 
         with pytest.raises(CustomHTTPException) as exc:
-            await CustomAccessBearer.verify_access_token("invalid_token")
+            await CustomAccessBearer.verify_validity_token("invalid_token")
 
         # Vérification des appels
         mock_blacklist.is_token_blacklisted.assert_awaited_once_with("invalid_token")
@@ -111,7 +111,7 @@ class TestCustomAccessBearer:
     async def test_verify_access_with_token(self, mock_decode_access_token, mock_jwt_settings):
         mock_decode_access_token.side_effect = JWTError("Token is invalid")
         with pytest.raises(CustomHTTPException) as exc_info:
-            await self.custom_access_token.verify_access_token("fake_access_token")
+            await self.custom_access_token.verify_validity_token("fake_access_token")
         assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_INVALID_ACCESS_TOKEN
 
@@ -123,7 +123,7 @@ class TestAuthorizeHTTPBearer:
         self.request = mock.Mock(spec=Request)
 
     @pytest.mark.asyncio
-    @mock.patch("src.middleware.CustomAccessBearer.verify_access_token")
+    @mock.patch("src.middleware.CustomAccessBearer.verify_validity_token")
     async def test_verify_access_token(self, mock_verify_token):
         credentials = HTTPAuthorizationCredentials(scheme="Bearer", credentials="valid_token")
 

@@ -18,9 +18,7 @@ async def test_create_roles_already_exists(
     http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_role_collection, fake_role_data
 ):
     fake_role_data.update({"name": fake_role_collection.name})
-    response = await http_client_api.post(
-        "/roles", json=fake_role_data, headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.post("/roles", json=fake_role_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert fake_role_data["name"] == fake_role_collection.name
@@ -35,12 +33,8 @@ async def test_create_roles_already_exists(
 
 
 @pytest.mark.asyncio
-async def test_create_roles_success(
-    http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_role_data
-):
-    response = await http_client_api.post(
-        "/roles", json=fake_role_data, headers={"Authorization": "Bearer valid_token"}
-    )
+async def test_create_roles_success(http_client_api, mock_verify_access_token, mock_check_permissions_handler, fake_role_data):
+    response = await http_client_api.post("/roles", json=fake_role_data, headers={"Authorization": "Bearer valid_token"})
 
     assert response.status_code == status.HTTP_201_CREATED, response.text
     assert fake_role_data["name"] == response.json()["name"]
@@ -83,9 +77,7 @@ async def test_read_role_not_found(
     mock_verify_access_token,
     mock_check_permissions_handler,
 ):
-    response = await http_client_api.get(
-        "/roles/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.get("/roles/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_400_BAD_REQUEST, response.text
     assert response.json() == {
         "code_error": "roles/role-not-found",
@@ -188,9 +180,7 @@ async def test_delete_role_not_found(
     mock_verify_access_token,
     mock_check_permissions_handler,
 ):
-    response = await http_client_api.delete(
-        "/roles/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"}
-    )
+    response = await http_client_api.delete("/roles/66e85363aa07cb1e95d3e3d0", headers={"Authorization": "Bearer valid_token"})
     assert response.status_code == status.HTTP_204_NO_CONTENT, response.text
 
     mock_verify_access_token.assert_called_once()

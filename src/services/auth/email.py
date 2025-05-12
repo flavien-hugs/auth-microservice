@@ -64,7 +64,7 @@ async def request_password_reset_with_email(bg: BackgroundTasks, email: EmailStr
 
 
 async def reset_password_completed_with_email(bg: BackgroundTasks, token: str, payload: ChangePassword) -> JSONResponse:
-    await CustomAccessBearer.verify_access_token(token=token)
+    await CustomAccessBearer.verify_validity_token(token=token)
     decode_token = CustomAccessBearer.decode_access_token(token=token)
 
     check_user_email = decode_token.get("subject", {}).get("email")
@@ -121,9 +121,7 @@ async def signup_with_email(bg: BackgroundTasks, email: EmailStr):
         body=rendered_html,
     )
 
-    response_data = {
-        "message": f"A link confirming your account has been sent to the email address you provided: '{email}'."
-    }
+    response_data = {"message": f"A link confirming your account has been sent to the email address you provided: '{email}'."}
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -132,7 +130,7 @@ async def signup_with_email(bg: BackgroundTasks, email: EmailStr):
 
 
 async def completed_register_with_email(token: str, payload: UserBaseSchema, bg: BackgroundTasks) -> User:
-    await CustomAccessBearer.verify_access_token(token=token)
+    await CustomAccessBearer.verify_validity_token(token=token)
     decode_token = CustomAccessBearer.decode_access_token(token=token)
 
     addr_email = decode_token.get("subject", {}).get("email")

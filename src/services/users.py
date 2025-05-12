@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 from datetime import datetime, UTC
@@ -132,9 +133,7 @@ async def update_user(user_id: PydanticObjectId, update_user: UpdateUser):
 
 async def update_user_password(user_id: PydanticObjectId, payload: UpdatePassword):
     user = await get_one_user(user_id=user_id)
-    updated_user_doc = await user.set(
-        {"updated_at": datetime.now(tz=UTC), "password": password_hash(payload.confirm_password)}
-    )
+    updated_user_doc = await user.set({"updated_at": datetime.now(tz=UTC), "password": password_hash(payload.confirm_password)})
     role = await get_one_role(role_id=PydanticObjectId(updated_user_doc.role))
     return user.model_copy(update={"extras": {"role_info": role.model_dump(by_alias=True)}})
 
@@ -156,8 +155,10 @@ async def activate_user_account(user_id: PydanticObjectId, action: AccountAction
     is_active = True if action == AccountAction.ACTIVATE else False
     await user.set({"is_active": is_active})
 
-    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "access")
-    await delete_custom_key(custom_key_prefix=settings.APP_NAME + "validate")
+    await asyncio.gather(
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "access"),
+        delete_custom_key(custom_key_prefix=settings.APP_NAME + "validate"),
+    )
 
     message = "activated" if is_active else "deactivated"
     return JSONResponse(

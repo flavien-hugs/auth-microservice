@@ -56,9 +56,7 @@ class VerifyOTP(PhonenumberModel):
 class LoginUser(BaseModel, CheckEmailOrPhone):
     email: Optional[str] = Field(None, examples=["haf@exemple.com"], description="User email")
     phonenumber: Optional[str] = Field(None, examples=["+2250151571396"], description="User phone number")
-    password: str = Field(
-        ..., min_length=settings.PASSWORD_MIN_LENGTH, examples=["password"], description="User password"
-    )
+    password: str = Field(..., min_length=settings.PASSWORD_MIN_LENGTH, examples=["password"], description="User password")
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -154,11 +152,7 @@ class UpdatePassword(BaseModel):
         new_password = values.get("new_password")
         confirm_password = values.get("confirm_password")
 
-        if (
-            old_password is not None
-            and confirm_password is not None
-            and compare_digest(old_password, confirm_password) is True
-        ):
+        if old_password is not None and confirm_password is not None and compare_digest(old_password, confirm_password) is True:
             raise CustomHTTPException(
                 code_error=AuthErrorCode.AUTH_PASSWORD_MISMATCH,
                 message_error="The old password cannot be the same as the new password.",
@@ -189,3 +183,7 @@ class ChangePasswordWithOTPCode(ChangePassword):
         if value and not re.match(r"^\+?1?\d{9,15}$", value):
             raise ValueError("Invalid phone number")
         return value
+
+
+class RefreshToken(BaseModel):
+    refresh_token: str = Field(default=..., description="Refresh token")

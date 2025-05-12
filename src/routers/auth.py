@@ -5,7 +5,7 @@ from fastapi import APIRouter, BackgroundTasks, Body, Depends, Query, Request, s
 from fastapi_cache.decorator import cache
 from slugify import slugify
 
-from src.common.helpers.caching import custom_key_builder, delete_custom_key
+from src.common.helpers.caching import custom_key_builder
 from src.common.services.trailhub_client import send_event
 from src.config import enable_endpoint, settings
 from src.middleware import AuthorizedHTTPBearer
@@ -16,6 +16,7 @@ from src.schemas import (
     EmailModelMixin,
     LoginUser,
     PhonenumberModel,
+    RefreshToken,
     RequestChangePassword,
     SendEmailMessage,
     SendSmsMessage,
@@ -70,9 +71,7 @@ if bool(settings.REGISTER_WITH_EMAIL):
         summary="Complete registration if you are registered with an e-mail address.",
         description="Complete registration if you are registered with an e-mail address.",
     )
-    async def register_completed(
-        request: Request, token: str, bg: BackgroundTasks, payload: UserBaseSchema = Body(...)
-    ):
+    async def register_completed(request: Request, token: str, bg: BackgroundTasks, payload: UserBaseSchema = Body(...)):
         result = await auth.completed_register_with_email(token, payload, bg)
 
         if settings.USE_TRACK_ACTIVITY_LOGS:
@@ -143,12 +142,13 @@ if not bool(settings.REGISTER_WITH_EMAIL):
         return result
 
 
-@auth_router.get(
-    "/logout", dependencies=[Depends(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK
-)
+@auth_router.post("/refresh-token", summary="Refresh user token", status_code=status.HTTP_200_OK)
+async def refresh_token(payload: RefreshToken = Body(...)):
+    return await auth.refresh_token(refresh_token=payload.refresh_token)
+
+
+@auth_router.get("/logout", dependencies=[Depends(AuthorizedHTTPBearer)], summary="Logout User", status_code=status.HTTP_200_OK)
 async def logout(request: Request):
-    await delete_custom_key(service_appname_slug + "access")
-    await delete_custom_key(service_appname_slug + "validate")
     return await auth.logout(request)
 
 
@@ -177,9 +177,7 @@ async def check_validate_access_token(token: str):
 
 
 @auth_router.put("/change-password/{id}", summary="Set up a password for the user.", status_code=status.HTTP_200_OK)
-async def change_password(
-    request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: ChangePassword = Body(...)
-):
+async def change_password(request: Request, bg: BackgroundTasks, id: PydanticObjectId, payload: ChangePassword = Body(...)):
     result = await auth.change_password(user_id=id, payload=payload)
     if settings.USE_TRACK_ACTIVITY_LOGS:
         await send_event(
@@ -197,9 +195,7 @@ async def change_password(
 if bool(settings.REGISTER_WITH_EMAIL):
 
     @auth_router.post("/request-password-reset", summary="Request a password reset.", status_code=status.HTTP_200_OK)
-    async def request_password_reset_with_email(
-        request: Request, bg: BackgroundTasks, payload: EmailModelMixin = Body(...)
-    ):
+    async def request_password_reset_with_email(request: Request, bg: BackgroundTasks, payload: EmailModelMixin = Body(...)):
         result = await auth.request_password_reset_with_email(bg=bg, email=payload.email)
         if settings.USE_TRACK_ACTIVITY_LOGS:
             await send_event(
@@ -316,9 +312,7 @@ async def send_sms(request: Request, background: BackgroundTasks, payload: SendS
 
 @auth_router.post("-email", summary="Send a e-mail", status_code=status.HTTP_200_OK, include_in_schema=False)
 async def send_email(request: Request, background: BackgroundTasks, payload: SendEmailMessage = Body(...)):
-    mail_service.send_email_background(
-        background, recipients=payload.recipients, subject=payload.subject, body=payload.message
-    )
+    mail_service.send_email_background(background, recipients=payload.recipients, subject=payload.subject, body=payload.message)
     if settings.USE_TRACK_ACTIVITY_LOGS:
         await send_event(
             request=request,

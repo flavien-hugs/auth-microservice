@@ -81,7 +81,7 @@ def mock_custom_access_bearer():
 
 @pytest.fixture
 def mock_verify_access_token():
-    with mock.patch("src.middleware.CustomAccessBearer.verify_access_token") as mock_verify:
+    with mock.patch("src.middleware.CustomAccessBearer.verify_validity_token") as mock_verify:
         mock_verify.return_value = None
         yield mock_verify
 

@@ -33,8 +33,7 @@ async def find_user_by_phonenumber(phonenumber: str):
     if not user.is_active:
         raise CustomHTTPException(
             code_error=UserErrorCode.USER_ACCOUND_DESABLE,
-            message_error=f"User account with phone number {phone!r} is disabled."
-            f" Please request to activate the account.",
+            message_error=f"User account with phone number {phone!r} is disabled." f" Please request to activate the account.",
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 

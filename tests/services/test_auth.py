@@ -48,11 +48,7 @@ async def test_login_success(
                 password="hashedpassword",
                 role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
                 is_active=True,
-                attributes={
-                    "device_id": None,
-                    "address_ip": None,
-                    "last_login": None
-                }
+                attributes={"device_id": None, "address_ip": None, "last_login": None},
             )
             payload = LoginUser(email="test@example.com", password="testpassword")
         else:
@@ -64,19 +60,13 @@ async def test_login_success(
                 password="hashedpassword",
                 role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
                 is_active=True,
-                attributes={
-                    "device_id": None,
-                    "address_ip": None,
-                    "last_login": None
-                }
+                attributes={"device_id": None, "address_ip": None, "last_login": None},
             )
             payload = LoginUser(phonenumber="+2250151571396", password="testpassword")
 
         # setup mocks
         mock_find_one.return_value = fake_user
-        mock_get_one_role.return_value.model_dump = mock.Mock(
-            return_value={"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"}
-        )
+        mock_get_one_role.return_value.model_dump = mock.Mock(return_value={"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"})
         mock_user_set.return_value = fake_user
 
         # mock request headers for X-Forwarded-For
@@ -102,8 +92,8 @@ async def test_login_success(
 
 @pytest.mark.asyncio
 async def test_login_device_already_logged_in(
-        mock_request,
-        fixture_models,
+    mock_request,
+    fixture_models,
 ):
     settings.REGISTER_WITH_EMAIL = True
 
@@ -114,26 +104,22 @@ async def test_login_device_already_logged_in(
         password="hashedpassword",
         role=PydanticObjectId("66e85363aa07cb1e95d3e3d0"),
         is_active=True,
-        attributes={
-            "device_id": "existing_device_id",
-            "address_ip": "192.168.1.2",
-            "last_login": datetime.now(tz=UTC)
-        }
+        attributes={"device_id": "existing_device_id", "address_ip": "192.168.1.2", "last_login": datetime.now(tz=UTC)},
     )
 
     mock_role = {"_id": "66e85363aa07cb1e95d3e3d0", "name": "admin"}
 
-    with mock.patch("src.services.auth.auth.get_mac_address", return_value="different_device_id"), \
-            mock.patch("src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock, return_value=fake_user), \
-            mock.patch("src.services.auth.auth.verify_password", return_value=True), \
-            mock.patch("src.services.auth.auth.get_one_role",
-                       new_callable=mock.AsyncMock, return_value=mock.Mock(mock_role)):
+    with mock.patch("src.services.auth.auth.get_mac_address", return_value="different_device_id"), mock.patch(
+        "src.services.auth.auth.User.find_one", new_callable=mock.AsyncMock, return_value=fake_user
+    ), mock.patch("src.services.auth.auth.verify_password", return_value=True), mock.patch(
+        "src.services.auth.auth.get_one_role", new_callable=mock.AsyncMock, return_value=mock.Mock(mock_role)
+    ):
         payload = LoginUser(email="test@example.com", password="testpassword")
 
         with pytest.raises(CustomHTTPException) as exc_info:
             await auth.login(request=mock_request, payload=payload)
 
-        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+        assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
         assert exc_info.value.code_error == AuthErrorCode.AUTH_ALREADY_LOGGED_IN
 
 
