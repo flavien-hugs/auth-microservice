@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.2.0 (2025-05-12)
+
+### Features
+
+- Add automatic versioning
+  ([`5e6db93`](https://github.com/flavien-hugs/auth-microservice/commit/5e6db939701ad11327ddfaa9f726a60fbba6e844))
+
+
 ## v0.1.0 (2025-05-12)
 
 ### Bug Fixes
